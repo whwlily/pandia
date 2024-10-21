@@ -42,7 +42,8 @@ class WebRTCEnv(gymnasium.Env):
         # RL state
         self.step_count = 0
         self.context: StreamingContext
-        self.obs_keys = list(sorted(config['observation_keys']))
+        # self.obs_keys = list(sorted(config['observation_keys']))
+        self.obs_keys = list(config['observation_keys'])
         self.monitor_durations = list(sorted(config['gym_setting']['observation_durations']))
         self.observation: Observation = Observation(self.obs_keys, 
                                                     durations=self.monitor_durations,

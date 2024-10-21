@@ -16,9 +16,9 @@ from stable_baselines3.common.vec_env import VecMonitor
 
 def main():
     model_pre = None
-    # model_pre = os.path.expanduser(f'~/sb3_logs/ppo/WebRTCEmulatorEnv_80/best_model')
-    # model_pre = os.path.expanduser('~/sb3_logs/ppo/WebRTCSimpleSimulatorEnv_2/best_model')
-    curriculum_level = 2
+    # model_pre = os.path.expanduser(f'~/sb3_logs/ppo/WebRTCEmulatorEnv_9/best_model')
+    # model_pre = os.path.expanduser('~/sb3_logs/ppo/WebRTCSimpleSimulatorEnv_6/best_model')
+    curriculum_level = 0
     algo = 'ppo'
     log_dir = os.path.expanduser(f'~/sb3_logs/{algo}')
     note = f'Train with variable bandwidth and delay. Curriculum level: {curriculum_level}. model_pre: {model_pre}'

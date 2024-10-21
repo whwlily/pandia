@@ -29,8 +29,8 @@ class ClientProtocol():
         self.bw = parse_rangable_int(os.getenv('BANDWIDTH', 3000))
         self.delay = parse_rangable_int(os.getenv('DELAY', 0))
         self.loss = parse_rangable_int(os.getenv('LOSS', 0))
-        self.height = os.getenv('WIDTH', 2160)
-        self.fps = int(os.getenv('FPS', 30))
+        self.height = os.getenv('WIDTH', 720)
+        self.fps = int(os.getenv('FPS', 25))
         self.receiver_ip = os.getenv('RECEIVER_IP', '127.0.0.1')
         self.cid = socket.gethostname().split('_')[-1]
 

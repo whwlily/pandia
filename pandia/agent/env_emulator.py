@@ -45,9 +45,10 @@ class WebRTCEmulatorEnv(WebRTCEnv):
     def start_container(self):
         cmd = f'docker run -d --rm --name {self.container_name} '\
               f'--hostname {self.container_name} '\
-              f'--cap-add=NET_ADMIN --env NVIDIA_DRIVER_CAPABILITIES=all '\
               f'--runtime=nvidia --gpus all '\
+              f'--cap-add=NET_ADMIN --env NVIDIA_DRIVER_CAPABILITIES=all '\
               f'-v /tmp:/tmp '\
+              f'-v /data2/kj/Workspace/Pandia/media:/app/media '\
               f'--env PRINT_STEP=True -e SENDER_LOG=/tmp/sender.log --env BANDWIDTH=1000-3000 '\
               f'{"--env NVENC=1" if self.enable_nvenc else ""} '\
               f'{"--env NVDEC=1" if self.enable_nvdec else ""} '\
@@ -57,6 +58,7 @@ class WebRTCEmulatorEnv(WebRTCEnv):
               f'--env CTRL_SOCKET_PATH={self.ctrl_socket_path} '\
               f'johnson163/pandia_emulator python -um sb3_client'
         print(cmd)
+        print('============================================')
         os.system(cmd)
         self.container = self.docker_client.containers.get(self.container_name) # type: ignore
         ts = time.time()
@@ -160,6 +162,7 @@ class WebRTCEmulatorEnv(WebRTCEnv):
 
         for mb in self.context.monitor_blocks.values():
             mb.update_ts(time.time() - self.obs_thread.ts_offset)
+
         self.observation.append(self.context.monitor_blocks)
         r = reward(self.context, self.net_sample)
 
@@ -177,7 +180,8 @@ class WebRTCEmulatorEnv(WebRTCEnv):
             self.bad_reward_count = 0
         terminated = self.bad_reward_count > 1000
         truncated = self.step_count > self.step_limit
-        return self.observation.array(), r, terminated, truncated, {'action': act.array()}
+        # return self.observation.array(), r, terminated, truncated, {'action': act.array()}
+        return self.observation.array(), r, terminated, truncated, {'action': act.bitrate} # eval时使用
 
 
 gymnasium.register('WebRTCEmulatorEnv', entry_point='pandia.agent.env_emulator:WebRTCEmulatorEnv', 
@@ -185,13 +189,13 @@ gymnasium.register('WebRTCEmulatorEnv', entry_point='pandia.agent.env_emulator:W
 
 
 def test_single():
-    bw = 3 * M
+    bw = 20 * M
     config = ENV_CONFIG
     config['network_setting']['bandwidth'] = bw
     config['gym_setting']['print_step'] = True
-    config['gym_setting']['print_period'] = 1
+    config['gym_setting']['print_period'] = .06
     config['gym_setting']['duration'] = 1000
-    config['gym_setting']['step_duration'] = .1
+    config['gym_setting']['step_duration'] = .06
     config['gym_setting']['logging_path'] = '/tmp/pandia.log'
     config['gym_setting']['skip_slow_start'] = 0
     config['gym_setting']['enable_nvenc'] = True
@@ -203,8 +207,8 @@ def test_single():
     try:
         env.reset()
         pd = 100
-        # bitrates = [1 * M] * pd + [2 * M] * pd + [3 * M] * pd + [2 * M] * pd + [1 * M] * pd 
-        bitrates = [1 * M] * pd
+        bitrates = [5 * M] * pd + [10 * M] * pd + [15 * M] * pd + [10 * M] * pd + [5 * M] * pd 
+        # bitrates = [1 * M] * pd
         for bitrate in bitrates:
             action.bitrate = bitrate 
             actions.append(action.bitrate / M)

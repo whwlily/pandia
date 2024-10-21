@@ -14,13 +14,27 @@ if TYPE_CHECKING:
 
 
 ONRL_OBS_KEYS = ['pkt_loss_rate', 'pkt_trans_delay', 'pkt_delay_interval', 'pkt_ack_rate', 'action_gap']
-
+BWE_DATA = [
+            "receiving_rate",
+            "received_packets_num",
+            "received_bytes",
+            "queuing_delay",
+            "delay",
+            "mini_seen_delay",
+            "delay_ratio",
+            "delay_avg_mini_diff",
+            "pkt_received_interval",
+            "pkt_received_jitter",
+            "pkt_loss_ratio",
+            "pkt_loss_num"
+        ]
 class Observation(object):
     def __init__(self, obs_keys=ENV_CONFIG['observation_keys'], 
                  durations=ENV_CONFIG['gym_setting']['observation_durations'], 
                  history_size=ENV_CONFIG['gym_setting']['history_size'],
                  boundary=ENV_CONFIG['boundary']) -> None:
-        self.obs_keys = list(sorted(obs_keys))
+        # self.obs_keys = list(sorted(obs_keys))
+        self.obs_keys = list(obs_keys)
         self.history_size = history_size
         self.obs_keys_map = {k: i for i, k in enumerate(self.obs_keys)}
         self.monitor_durations = list(sorted(durations))
@@ -36,6 +50,8 @@ class Observation(object):
             data_list = [self.get_data(data, k, False) for k in key]
             data_list = [d for d in data_list if d != '?']
             return ', '.join(data_list)  # type: ignore
+        if key in BWE_DATA:
+            return f'{data[self.obs_keys_map[key]]: .02f}'
         res = dnml(key, data[self.obs_keys_map[key]], self.boundary[key], log=False) \
             if key in self.obs_keys else '?'
         if numeric:
@@ -65,6 +81,10 @@ class Observation(object):
             for duration_index in range(len(self.data[history_index])):
                 data = self.data[history_index][duration_index]
                 res = []
+                # BWE
+                # ss = get_data(data, BWE_DATA)
+                # if ss:
+                #     res.append(f'BWE data: [{ss}]')
                 ss = get_data(data, ["frame_encoding_delay", "frame_egress_delay", "frame_recv_delay", "frame_decoding_delay", "frame_decoded_delay"])
                 if ss:
                     res.append(f'Dly.f (ms): [{ss}]')
@@ -102,11 +122,32 @@ class Observation(object):
                     data = 0
                 else:
                     data = getattr(block, obs_key)
-                self.data[0, i, j] = nml(obs_key, np.array([data]), self.boundary[obs_key], log=False)[0]
+                if obs_key not in BWE_DATA:
+                    self.data[0, i, j] = nml(obs_key, np.array([data]), self.boundary[obs_key], log=False)[0]
+                else:
+                    self.data[0, i, j] = np.array([data]).astype(np.float32)[0]
 
     def array(self) -> np.ndarray:
         return self.data.flatten()
-
+    
+    def array_bec(self) -> np.ndarray:
+        # custom_order = [
+        #     [i % 5, i // 5 % 2, i // 10] for i in range(5*2*12)
+        # ]
+        # return self.data[tuple(zip(*custom_order))]
+        
+        # history_size = 41
+        bec_array = np.zeros((5, 2, 12), dtype=np.float32)
+        # 提取 5x0x12 由 nparray 的 41[:5]x0x12 组成
+        bec_array[:, 0, :] = self.data[:5, 0, :]
+        # 提取 5x1x12 由 nparray 的 41[:10]x1x12 组成，但步长为 10
+        bec_array[:, 1, :] = self.data[::10, 1, :]
+        custom_order = [
+            [i % 5, i // 5 % 2, i // 10] for i in range(5*2*12)
+        ]
+        return bec_array[tuple(zip(*custom_order))]
+    
+    
     @staticmethod
     def from_array(array, obs_keys=ENV_CONFIG['observation_keys'], 
                    durations=ENV_CONFIG['gym_setting']['observation_durations']) -> 'Observation':

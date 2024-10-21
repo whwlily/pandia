@@ -121,8 +121,10 @@ def analyze_frame(context: StreamingContext, output_dir: str) -> None:
     encoding_delay = np.array([f.encoding_delay() * 1000 for f in frames_encoded])
     encoding_delay0 = np.array([f.encoding_delay0() * 1000 for f in frames_encoded])
     decoding_delay0 = np.array([f.decoding_delay0() * 1000 for f in frames_encoded])
-
+    stacked = np.vstack([decoding_delay, pacing_delay, pacing_rtx_delay, assemble_delay, decoding_queue_delay, decoding_delay0, encoding_delay0, encoding_delay])
+    max_ylim = min(np.max(stacked), 3000)
     plt.close()
+    plt.ylim(top=max_ylim)
     plt.plot(frames_captured_ts[encoding_delay >= 0], encoding_delay[encoding_delay >= 0], 'm')
     plt.plot(frames_captured_ts[pacing_delay >= 0], pacing_delay[pacing_delay >= 0], 'y')
     plt.plot(frames_captured_ts[pacing_delay >= 0], pacing_rtx_delay[pacing_rtx_delay >= 0], 'c')
@@ -135,12 +137,14 @@ def analyze_frame(context: StreamingContext, output_dir: str) -> None:
     plt.savefig(os.path.join(output_dir, f'mea-delay-frame.{FIG_EXTENSION}'), dpi=DPI)
 
     plt.close()
+    plt.ylim(top=max_ylim)
     plt.plot(frames_captured_ts[decoding_delay >= 0], decoding_delay[decoding_delay >= 0], 'b')
     plt.xlabel('Timestamp (s)')
     plt.ylabel('G2G Delay (ms)')
     plt.savefig(os.path.join(output_dir, f'mea-delay-g2g.{FIG_EXTENSION}'), dpi=DPI)
 
     plt.close()
+    plt.ylim(top=max(np.max(decoding_delay0),np.max(encoding_delay0)))
     plt.plot(frames_captured_ts[encoding_delay0 >= 0], encoding_delay0[encoding_delay0 >= 0])
     plt.plot(frames_captured_ts[decoding_delay0 >= 0], decoding_delay0[decoding_delay0 >= 0])
     plt.legend(['Encoding', 'Decoding'])
@@ -149,6 +153,7 @@ def analyze_frame(context: StreamingContext, output_dir: str) -> None:
     plt.savefig(os.path.join(output_dir, f'mea-delay-endec.{FIG_EXTENSION}'), dpi=DPI)
 
     plt.close()
+    plt.ylim(top=max_ylim)
     plt.plot(frames_captured_ts[decoding_delay >= 0], decoding_delay[decoding_delay >= 0])
     plt.plot(frames_captured_ts[decoding_queue_delay >= 0], decoding_queue_delay[decoding_queue_delay >= 0])
     plt.plot(frames_captured_ts[encoding_delay >= 0], encoding_delay[encoding_delay >= 0])
@@ -158,6 +163,7 @@ def analyze_frame(context: StreamingContext, output_dir: str) -> None:
     plt.savefig(os.path.join(output_dir, f'mea-delay-codec.{FIG_EXTENSION}'), dpi=DPI)
 
     plt.close()
+    plt.ylim(top=max_ylim)
     plt.xlabel('Timestamp (s)')
     plt.ylabel('Delay (ms)')
     plt.plot(frames_captured_ts[assemble_delay >= 0], assemble_delay[assemble_delay >= 0], 'r')
@@ -167,6 +173,7 @@ def analyze_frame(context: StreamingContext, output_dir: str) -> None:
     plt.savefig(os.path.join(output_dir, f'mea-delay-trans.{FIG_EXTENSION}'), dpi=DPI)
 
     plt.close()
+    plt.ylim(top=max_ylim)
     plt.plot(frames_captured_ts[1:], (frames_captured_ts[1:] - frames_captured_ts[:-1]) * 1000)
     plt.plot(frames_decoded_ts[1:], (frames_decoded_ts[1:] - frames_decoded_ts[:-1]) * 1000, alpha=0.7)
     plt.legend(['Encoding', 'Decoding'])
@@ -187,7 +194,7 @@ def analyze_frame(context: StreamingContext, output_dir: str) -> None:
     plt.close()
     fig, ax1 = plt.subplots()
     ax1.plot(frames_captured_ts, [f.encoded_size / 1024 for f in frames_encoded], 'b.')
-    ax1.plot([f.captured_at - context.start_ts for f in frames_dropped], [10 for _ in frames_dropped], 'xb')
+    ax1.plot([f.captured_at - context.start_ts for f in frames_dropped], [10 for _ in frames_dropped], 'xr')
     ax1.plot([f.captured_at - context.start_ts for f in frames_key], [f.encoded_size / 1024 for f in frames_key], '^g')
     ax1.tick_params(axis='y', labelcolor='b')
     ax1.set_xlabel('Timestamp (s)')
@@ -296,27 +303,36 @@ def analyze_packet(context: StreamingContext, output_dir: str) -> None:
     plt.xlabel('Timestamp (s)')
     plt.ylabel('Packet transmission delay (ms)')
     if y:
-        plt.ylim([min(y), max(y)])
-    # plt.ylim([0, 10])
-    plt.savefig(os.path.join(output_dir, f'mea-delay-packet-biased.{FIG_EXTENSION}'), dpi=DPI)
-
+        plt.ylim([min(y), min(max(y), 1000)])
+    plt.savefig(os.path.join(output_dir, f'mea-delay-packet-recv-biased.{FIG_EXTENSION}'), dpi=DPI)
     plt.close()
+    
+    cdf_x = list(sorted([d[1] * 1000 for d in data_recv]))
+    cdf_y = np.arange(len(cdf_x)) / len(cdf_x)
+    plt.plot(cdf_x, cdf_y)
+    plt.xlabel('Packet receive delay (ms)')
+    plt.ylabel('CDF')
+    plt.ylim([0, 1])
+    plt.xlim([0, min(max(cdf_x),1000)])
+    plt.savefig(os.path.join(output_dir, f'mea-delay-packet-recv-cdf.{FIG_EXTENSION}'), dpi=DPI)
+    plt.close()
+    
     plt.plot([(d[0] - context.start_ts) for d in data_ack], 
              [d[1] * 1000 for d in data_ack], 'x')
     plt.xlabel('Timestamp (s)')
     plt.ylabel('RTT (ms)')
-    # plt.ylim([0, 50])
-    plt.savefig(os.path.join(output_dir, f'mea-delay-packet.{FIG_EXTENSION}'), dpi=DPI)
+    plt.ylim([0, min(max(cdf_x), 1000)])
+    plt.savefig(os.path.join(output_dir, f'mea-delay-packet-ack.{FIG_EXTENSION}'), dpi=DPI)
+    plt.close()
 
     cdf_x = list(sorted([d[1] * 1000 for d in data_ack]))
     cdf_y = np.arange(len(cdf_x)) / len(cdf_x)
-    plt.close()
     plt.plot(cdf_x, cdf_y)
     plt.xlabel('Packet ACK delay (ms)')
     plt.ylabel('CDF')
     plt.ylim([0, 1])
-    plt.xlim([0, max(cdf_x)])
-    plt.savefig(os.path.join(output_dir, f'mea-delay-packet-cdf.{FIG_EXTENSION}'), dpi=DPI)
+    plt.xlim([0, min(max(cdf_x), 1000)])
+    plt.savefig(os.path.join(output_dir, f'mea-delay-packet-ack-cdf.{FIG_EXTENSION}'), dpi=DPI)
 
     duration = 1
     packets = sorted(context.packets.values(), key=lambda x: x.sent_at)

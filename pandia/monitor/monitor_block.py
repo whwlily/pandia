@@ -3,7 +3,7 @@ from pandia.agent.env_config import ENV_CONFIG
 from pandia.context.frame_context import FrameContext
 from pandia.context.packet_context import PacketContext
 from pandia.monitor.monitor_block_data import MonitorBlockData
-
+import math
 
 class MonitorBlock(object):
     def __init__(self, duration=1, boundary=ENV_CONFIG['boundary']) -> None:
@@ -29,7 +29,10 @@ class MonitorBlock(object):
         self.pkts_trans_delay_data = MonitorBlockData(lambda p: p.sent_at, lambda p: p.recv_delay(self.utc_offset), duration=duration)
         self.pkts_lost_count = MonitorBlockData(lambda p: p.acked_at, lambda p: 1 if not p.received else 0, duration=duration)
         self.pkts_delay_interval_data = MonitorBlockData(lambda s: s[0], lambda s: s[1], duration=duration)
+        self.pkts_received_interval_data = MonitorBlockData(lambda s: s[0], lambda s: s[1], duration=duration)
         self.last_acked_pkt = None
+        self.__mini_seen_delay = math.inf
+        self.last_pkts_trans_delay = self.boundary['pkt_trans_delay'][1]
         # Setting statistics
         self.pacing_rate_data = MonitorBlockData(lambda p: p[0], lambda p: p[1], duration=duration)
         self.bitrate_data = MonitorBlockData(lambda f: f.encoding_at, lambda f: f.bitrate, duration=duration)
@@ -59,10 +62,13 @@ class MonitorBlock(object):
         self.pkts_trans_delay_data.update_ts(now)
         self.pkts_lost_count.update_ts(now)
         self.pkts_delay_interval_data.update_ts(now)
+        self.pkts_received_interval_data.update_ts(now)
         self.pacing_rate_data.update_ts(now)
         self.bitrate_data.update_ts(now)
         self.bandwidth_data.update_ts(now)
-
+        self.__mini_seen_delay = min(self.__mini_seen_delay, self.pkts_trans_delay_data.mini)
+        self.last_pkts_trans_delay = self.pkt_trans_delay
+        
     @property
     def action_gap(self):
         return self.bitrate - self.pacing_rate
@@ -138,10 +144,16 @@ class MonitorBlock(object):
     @property
     def pkt_egress_rate(self):
         return self.pkts_sent_size.sum * 8 / self.duration
-
+    # before
+    # @property
+    # def pkt_trans_delay(self):
+    #     return self.pkts_trans_delay_data.avg(self.boundary['pkt_trans_delay'][1])
+    
     @property
     def pkt_trans_delay(self):
-        return self.pkts_trans_delay_data.avg(self.boundary['pkt_trans_delay'][1])
+        if self.pkts_trans_delay_data.avg(self.boundary['pkt_trans_delay'][1]) != self.boundary['pkt_trans_delay'][1]:
+            return self.pkts_trans_delay_data.avg(self.boundary['pkt_trans_delay'][1])
+        return self.last_pkts_trans_delay
 
     @property
     def pkt_ack_rate(self):
@@ -155,6 +167,95 @@ class MonitorBlock(object):
     @property
     def pkt_delay_interval(self):
         return self.pkts_delay_interval_data.avg()
+    
+    # Bandwidth Estimation Challenge data
+    # @property
+    # def bec_data(self):
+    #     return {
+    #         "receiving_rate": self.pkt_ack_rate,    # bps
+    #         "received_packets_num": self.pkts_acked_size.num,
+    #         "received_bytes": self.pkts_acked_size.sum, # bytes
+    #         "queuing_delay": (self.pkt_trans_delay - self.mini_seen_delay) * 1000, # ms
+    #         "delay": self.pkt_trans_delay * 1000,  # -200ms ??
+    #         "mini_seen_delay": self.mini_seen_delay,
+    #         "delay_ratio": (self.pkt_trans_delay / self.pkts_trans_delay_data.mini) if self.pkts_trans_delay_data.mini > 0 else 1,
+    #         "delay_avg_mini_diff": (self.pkt_trans_delay - self.pkts_trans_delay_data.mini) *1000,
+    #         "pkt_received_interval": self.pkt_received_interval * 1000, 
+    #         "pkt_received_jitter": (self.pkts_received_interval_data.std) * 1000,
+    #         "pkt_loss_ratio": self.pkt_loss_rate,
+    #         "pkt_loss_num": self.pkts_lost_count.sum if \
+    #         self.pkts_sent_size.num > 0 else 0
+    #     }
+    
+    @property
+    def receiving_rate(self):
+        """包确认率 (bps)"""
+        return self.pkt_ack_rate
+
+    @property
+    def received_packets_num(self):
+        """已接收的包数量"""
+        return self.pkts_acked_size.num
+
+    @property
+    def received_bytes(self):
+        """已接收的字节数"""
+        return self.pkts_acked_size.sum
+
+    @property
+    def queuing_delay(self):
+        """队列延迟 (ms)"""
+        return self.pkt_trans_delay * 1000 - self.mini_seen_delay
+
+    @property
+    def delay(self):
+        """延迟 (ms)"""
+        return self.pkt_trans_delay * 1000
+
+    @property
+    def mini_seen_delay(self):
+        """最小看到的延迟 (ms)"""
+        mini_seen_delay = self.__mini_seen_delay
+        return (mini_seen_delay if mini_seen_delay != math.inf else 3) * 1000
+
+    @property
+    def delay_ratio(self):
+        """延迟比率"""
+        if self.pkts_trans_delay_data.mini > 0 and self.pkts_trans_delay_data.mini < self.pkt_trans_delay:
+            return self.pkt_trans_delay / self.pkts_trans_delay_data.mini
+        else:
+            return 1
+
+    @property
+    def delay_avg_mini_diff(self):
+        """延迟和最小延迟的差值 (ms)"""
+        if self.pkts_trans_delay_data.mini > 0 and self.pkts_trans_delay_data.mini < self.pkt_trans_delay:
+            return (self.pkt_trans_delay - self.pkts_trans_delay_data.mini) * 1000
+        else:
+            return 0
+
+    @property
+    def pkt_received_interval(self):
+        """接收包的间隔 (ms)"""
+        return self.pkts_received_interval_data.avg() * 1000
+
+    @property
+    def pkt_received_jitter(self):
+        """接收包的抖动 (ms)"""
+        return self.pkts_received_interval_data.std * 1000
+
+    @property
+    def pkt_loss_ratio(self):
+        """包丢失率"""
+        return min(self.pkt_loss_rate, 1)
+
+    @property
+    def pkt_loss_num(self):
+        """包丢失数量"""
+        if self.pkts_sent_size.num > 0:
+            return self.pkts_lost_count.sum
+        else:
+            return 0
 
     def on_packet_added(self, packet: PacketContext, ts: float):
         pass
@@ -176,6 +277,8 @@ class MonitorBlock(object):
             self.pkts_delay_interval_data\
                 .append((ts, (packet.received_at_utc - self.last_acked_pkt.received_at_utc) - 
                          (packet.sent_at - self.last_acked_pkt.sent_at)), ts)
+            self.pkts_received_interval_data\
+                .append((ts, packet.received_at_utc - self.last_acked_pkt.received_at_utc), ts)
         self.last_acked_pkt = packet
 
     def on_frame_added(self, frame: FrameContext, ts: float):
@@ -207,4 +310,3 @@ class MonitorBlock(object):
 
     def update_max_queue_delay(self, ts: float):
         pass
-

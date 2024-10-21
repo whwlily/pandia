@@ -12,6 +12,7 @@ CURRICULUM_LEVELS = [
         },
         'action_limit': {
             'bitrate': [MIN_BR, 10 * M],
+            # 'bitrate': [5 * M, 10 * M],
         }
     },
     {

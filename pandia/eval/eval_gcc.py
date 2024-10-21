@@ -14,7 +14,7 @@ from pandia.constants import M
 from pandia.train.train_sb3_simple_simulator import CustomPolicy
 
 
-def main(bw=7 * M):
+def main(bw=8 * M):
     config = ENV_CONFIG
     deep_update(config, CURRICULUM_LEVELS[2])
     config['network_setting']['bandwidth'] = bw
@@ -25,6 +25,7 @@ def main(bw=7 * M):
     config['gym_setting']['duration'] = 1000
     config['gym_setting']['skip_slow_start'] = 0
     config['action_keys'] = ['fake']
+    config['gym_setting']['logging_path'] = '/tmp/eval_gcc.log'
     env = WebRTCEmulatorEnv(config=config, curriculum_level=None) # type: ignore
     obs, _ = env.reset()
     print(f'Eval with bw: {env.net_sample["bw"] / M:.02f} Mbps')
@@ -46,7 +47,7 @@ def main(bw=7 * M):
     env.close()
 
     # Plot evaluation results
-    output_dir = os.path.join(RESULTS_PATH, 'eval_gcc')
+    output_dir = os.path.join(RESULTS_PATH, 'eval_gcc_720_8mbps_longtime')
     os.makedirs(output_dir, exist_ok=True)
 
     x = np.arange(len(bitrates)) 

@@ -11,10 +11,11 @@ NORMALIZATION_RANGE = {
     'bitrate': [200 * K, 10 * M],
     'fec_rate': [0, 255],
     'fps': [1, 60],
-    'delay': [0, 1],
+    'delay': [0, 3],
     'qp': [0, 255],
     'frame_size': [0, 100 * M],
     'loss_rate': [0, 1],
+    'delay_ms': [0, 3000],
 }
 
 BOUNDARY = {
@@ -51,6 +52,19 @@ BOUNDARY = {
     'pkt_delay_interval': [0, 10],
     'action_gap': [- 100 * M, 100 * M],
     'bandwidth': NORMALIZATION_RANGE['bandwidth'],
+    # Bandwidth Estimation Challenge data
+    "receiving_rate": [0, 200 * M],
+    "received_packets_num": [0, 1000000],
+    "received_bytes": [0, 200 * M],
+    "queuing_delay": NORMALIZATION_RANGE['delay_ms'],
+    "delay": NORMALIZATION_RANGE['delay_ms'],
+    "mini_seen_delay": NORMALIZATION_RANGE['delay_ms'],
+    "delay_ratio": [0, 1000000],
+    "delay_avg_mini_diff": NORMALIZATION_RANGE['delay_ms'],
+    "pkt_received_interval": NORMALIZATION_RANGE['delay_ms'],
+    "pkt_received_jitter": NORMALIZATION_RANGE['delay_ms'],
+    "pkt_loss_ratio": NORMALIZATION_RANGE['loss_rate'],
+    "pkt_loss_num": [0, 1000000]
 }
 
 NETWORK_SETTING = {
@@ -64,17 +78,18 @@ ACTION_LIMIT = {
 }
 
 VIDEO_SOURCE = {
-    'resolution': 1080,
-    'fps': 30,
+    'resolution': 720,
+    'fps': 25,
 }
 
 GYM_SETTING = {
-    'step_duration': .1,
+    'step_duration': .6,
     'startup_delay': 1,
     'action_cap': 1, # Cap the bitrate action by the bandwidth
     'duration': 10,
-    'observation_durations' : [.1],
+    'observation_durations' : [.06, .6],
     'history_size' : 5,
+    # 'history_size' : 41,
     'print_step': False,
     'print_period': 1,
     'skip_slow_start': 0,
@@ -84,50 +99,71 @@ GYM_SETTING = {
     'enable_nvdec': True,
 }
 
+
 ENV_CONFIG = {
-    'action_keys' : list(sorted(['bitrate',
-                                #  'pacing_rate',
-                                #  'resolution',
-                                #  'fps',
-                                #  'padding_rate',
-                                #  'fec_rate_key',
-                                #  'fec_rate_delta',
-                                 ])),
-    'observation_keys' : list(sorted([
+    'action_keys' : list(sorted([
+        'bitrate',
+        # 'pacing_rate',
+        # 'resolution',
+        # 'fps',
+        # 'padding_rate',
+        # 'fec_rate_key',
+        # 'fec_rate_delta',
+    ])),
+    'observation_keys' : list([
         # 'frame_encoding_delay',
         # 'frame_egress_delay', 
         # 'frame_recv_delay',
         # 'frame_decoding_delay',
-        'frame_decoded_delay',
         # 'frame_fps', 
         # 'frame_fps_decoded', 
         # 'frame_qp',
         # 'frame_height', 
         # 'frame_encoded_height', 
         # 'frame_size',
-        'frame_bitrate',
         # 'frame_key_count',
-        'bitrate',
         # 'pkt_egress_rate', 
         # 'pkt_ack_rate',
+        # 'action_gap',
+
+        # pandia data
+        'frame_decoded_delay',
+        'frame_bitrate',
+        'bitrate',
         'pkt_trans_delay', 
         'pkt_delay_interval',
         'pkt_loss_rate',
-        # 'pacing_rate', 
-        # 'action_gap',
+        'pacing_rate', 
 
         # Internal variable of the network.
         # Should only be used in the value function.
         # 'bandwidth',
-    ])),
+        
+        # Bandwidth Estimation Challenge data
+        # "receiving_rate",
+        # "received_packets_num",
+        # "received_bytes",
+        # "queuing_delay",
+        # "delay",
+        # "mini_seen_delay",
+        # "delay_ratio",
+        # "delay_avg_mini_diff",
+        # "pkt_received_interval",
+        # "pkt_received_jitter",
+        # "pkt_loss_ratio",
+        # "pkt_loss_num"
+    ]), # 去除sorted
     'action_static_settings' : {
-        'bitrate': 1 * M,
-        'pacing_rate': 200 * M,
-        'fps': 30,
+        'bitrate': 500 * K,
+        # 'pacing_rate': 200 * M,
+        'pacing_rate': 0,
+        # 'fps': 25,
+        'fps': 0,
         'fec_rate_key': 0,
         'fec_rate_delta': 0,
         'padding_rate': 0,
-        'resolution': 1080,
+        # 'resolution': 720,
+        'resolution': 0,
     },
     'action_invalid_value': {
         'bitrate': 0,

@@ -46,7 +46,7 @@ class PandiaPPO(PPO):
 
             with th.no_grad():
                 # Convert to pytorch tensor or to TensorDict
-                obs_tensor = obs_as_tensor(self._last_obs, self.device)
+                obs_tensor = obs_as_tensor(self._last_obs, self.device)  # type: ignore[arg-type]
                 actions, values, log_probs, distribution = self.policy(obs_tensor)
             actions = actions.cpu().numpy()
 
@@ -65,7 +65,7 @@ class PandiaPPO(PPO):
                 raise Exception(f'Unknown env type: {type(env)}')
             new_obs, rewards, dones, infos = env.step(clipped_actions)
             capped_actions = np.concatenate([info['action'] for info in infos])
-            # actions = capped_actions
+            # actions = capped_actions   # 作用是什么
             # log_probs = distribution.log_prob(obs_as_tensor(actions, self.device))
 
             self.num_timesteps += env.num_envs

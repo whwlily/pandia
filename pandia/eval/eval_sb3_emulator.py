@@ -20,15 +20,15 @@ def main(model_id=None, bw=7 * M):
         models = [int(d[18:]) for d in os.listdir(log_dir) if d.startswith('WebRTCEmulatorEnv_')]
         model_id = max(models)
     config = ENV_CONFIG
-    deep_update(config, CURRICULUM_LEVELS[2])
+    deep_update(config, CURRICULUM_LEVELS[0])
     config['network_setting']['bandwidth'] = bw
     config['network_setting']['delay'] = .008
     config['gym_setting']['print_step'] = True
     config['gym_setting']['step_duration'] = .02 
-    config['gym_setting']['action_cap'] = False
+    config['gym_setting']['action_cap'] = True
     config['gym_setting']['print_period'] = 0
     config['gym_setting']['duration'] = 10
-    config['gym_setting']['skip_slow_start'] = 0
+    config['gym_setting']['skip_slow_start'] = 1
     env = WebRTCEmulatorEnv(config=config, curriculum_level=None) # type: ignore
     path = os.path.expanduser(f"~/sb3_logs/ppo/WebRTCEmulatorEnv_{model_id}/best_model")
     print(f'Loading model from {path}')
@@ -43,7 +43,12 @@ def main(model_id=None, bw=7 * M):
         obs, reward, terminated, truncated, info = env.step(action)
         obs_obj = env.observation
         act_obj = Action.from_array(action, env.action_keys)
-        actions.append(act_obj.bitrate / M)
+        actions.append(info["action"] / M)
+        # if act_obj.bitrate / M < 5:
+        #         print(f"error！！！！,act_obj.bitrate:{act_obj.bitrate / M}")
+        #         print(f"action:{action}")
+        #         print(f"act_obj:{act_obj}")
+        #         print(f"info:{info}")
         delays.append(obs_obj.get_data(obs_obj.data[0][0], 'frame_decoded_delay', True))
         rewards.append(reward)
         if terminated or truncated:
