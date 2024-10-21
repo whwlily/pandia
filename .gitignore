@@ -4,4 +4,6 @@ data
 logs
 tensorboard
 results
-media
+*.mp4
+*.yuv
+result_bwe_data
