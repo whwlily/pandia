@@ -11,6 +11,7 @@ class Action():
                  log=ENV_CONFIG['gym_setting']['log_nml']) -> None:
         self.action_keys = list(sorted(action_keys))
         # Initiation values are invalid values so that WebRTC will not use DRL actions 
+        self.prediction_bandwidth = .0
         self.bitrate = .0
         self.pacing_rate = .0 
         self.resolution = .0
@@ -36,7 +37,11 @@ class Action():
             res += f'FPS: {self.fps}, '
         if 'fec_rate_key' in self.action_keys:
             res += f'FEC: {self.fec_rate_key}/{self.fec_rate_delta}'
+        if 'prediction_bandwidth' in self.action_keys:
+            res += f'prediction_bandwidth: {self.prediction_bandwidth / M:.02f} mbps, '
         assert res != '', 'Invalid action'
+        # 展示
+        return f'prediction_bandwidth: {self.prediction_bandwidth / M:.02f} mbps'
         return res
 
 
@@ -55,7 +60,7 @@ class Action():
         
         parameters = [('bitrate', K), ('pacing_rate', K), ('fps', 1),
                       ('fec_rate_key', 1), ('fec_rate_delta', 1),
-                      ('padding_rate', K), ('resolution', 1)]
+                      ('padding_rate', K), ('resolution', 1),('prediction_bandwidth',1)]
         for i, p in enumerate(parameters):
             if self.fake:
                 write_int(ENV_CONFIG['action_invalid_value'][p[0]] / p[1], i)

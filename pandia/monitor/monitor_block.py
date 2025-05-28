@@ -26,10 +26,16 @@ class MonitorBlock(object):
         # Packet statistics
         self.pkts_sent_size = MonitorBlockData(lambda p: p.sent_at, lambda p: p.size, duration=duration)
         self.pkts_acked_size = MonitorBlockData(lambda p: p.acked_at, lambda p: p.size, duration=duration)
-        self.pkts_trans_delay_data = MonitorBlockData(lambda p: p.sent_at, lambda p: p.recv_delay(self.utc_offset), duration=duration)
+        # self.pkts_trans_delay_data = MonitorBlockData(lambda p: p.sent_at, lambda p: p.recv_delay(self.utc_offset), duration=duration)
+        self.pkts_trans_delay_data = MonitorBlockData(lambda p: p.acked_at, lambda p: p.recv_delay(self.utc_offset), duration=duration)
         self.pkts_lost_count = MonitorBlockData(lambda p: p.acked_at, lambda p: 1 if not p.received else 0, duration=duration)
         self.pkts_delay_interval_data = MonitorBlockData(lambda s: s[0], lambda s: s[1], duration=duration)
         self.pkts_received_interval_data = MonitorBlockData(lambda s: s[0], lambda s: s[1], duration=duration)
+
+        self.pkts_acked_size_video = MonitorBlockData(lambda p: p.acked_at, lambda p: p.size, duration=duration)
+        self.pkts_acked_size_audio = MonitorBlockData(lambda p: p.acked_at, lambda p: p.size, duration=duration)
+        self.pkts_acked_size_prob = MonitorBlockData(lambda p: p.acked_at, lambda p: p.size, duration=duration)
+
         self.last_acked_pkt = None
         self.__mini_seen_delay = math.inf
         self.last_pkts_trans_delay = self.boundary['pkt_trans_delay'][1]
@@ -41,6 +47,9 @@ class MonitorBlock(object):
 
     def update_utc_local_offset(self, offset):
         self.pkts_acked_size.ts_offset = offset
+        self.pkts_acked_size_video.ts_offset = offset
+        self.pkts_acked_size_audio.ts_offset = offset
+        self.pkts_acked_size_prob.ts_offset = offset
 
     def update_utc_offset(self, offset):
         self.utc_offset = offset
@@ -68,6 +77,9 @@ class MonitorBlock(object):
         self.bandwidth_data.update_ts(now)
         self.__mini_seen_delay = min(self.__mini_seen_delay, self.pkts_trans_delay_data.mini)
         self.last_pkts_trans_delay = self.pkt_trans_delay
+        self.pkts_acked_size_video.update_ts(now)
+        self.pkts_acked_size_audio.update_ts(now)   
+        self.pkts_acked_size_prob.update_ts(now)
         
     @property
     def action_gap(self):
@@ -145,15 +157,15 @@ class MonitorBlock(object):
     def pkt_egress_rate(self):
         return self.pkts_sent_size.sum * 8 / self.duration
     # before
-    # @property
-    # def pkt_trans_delay(self):
-    #     return self.pkts_trans_delay_data.avg(self.boundary['pkt_trans_delay'][1])
-    
     @property
     def pkt_trans_delay(self):
-        if self.pkts_trans_delay_data.avg(self.boundary['pkt_trans_delay'][1]) != self.boundary['pkt_trans_delay'][1]:
-            return self.pkts_trans_delay_data.avg(self.boundary['pkt_trans_delay'][1])
-        return self.last_pkts_trans_delay
+        return min(self.pkts_trans_delay_data.avg(self.boundary['pkt_trans_delay'][1]), 3)
+    
+    # @property
+    # def pkt_trans_delay(self):
+    #     if self.pkts_trans_delay_data.avg(self.boundary['pkt_trans_delay'][1]) != self.boundary['pkt_trans_delay'][1]:
+    #         return self.pkts_trans_delay_data.avg(self.boundary['pkt_trans_delay'][1])
+    #     return self.last_pkts_trans_delay
 
     @property
     def pkt_ack_rate(self):
@@ -204,8 +216,11 @@ class MonitorBlock(object):
 
     @property
     def queuing_delay(self):
-        """队列延迟 (ms)"""
-        return self.pkt_trans_delay * 1000 - self.mini_seen_delay
+        """排队延迟 (ms)"""
+        if self.mini_seen_delay != 3000:
+            return self.pkt_trans_delay * 1000 - self.mini_seen_delay  
+        else:
+            return 3000 
 
     @property
     def delay(self):
@@ -256,6 +271,36 @@ class MonitorBlock(object):
             return self.pkts_lost_count.sum
         else:
             return 0
+        
+    @property
+    def video_pkt_ratio(self):
+        """视频包比例"""
+        if self.pkts_acked_size.num > 0:
+            val = self.pkts_acked_size_video.num / self.pkts_acked_size.num
+            return min(val, 1)
+            # return self.pkts_acked_size_video.num / self.pkts_acked_size.num
+        else:
+            return 0
+        
+    @property
+    def audio_pkt_ratio(self):
+        """音频包比例"""
+        if self.pkts_acked_size.num > 0:
+            val = self.pkts_acked_size_audio.num / self.pkts_acked_size.num 
+            return min(val, 1)
+            # return self.pkts_acked_size_audio.num / self.pkts_acked_size.num 
+        else:
+            return 0
+        
+    @property
+    def prob_pkt_ratio(self):
+        """探测包比例"""
+        if self.pkts_acked_size.num > 0:
+            val = self.pkts_acked_size_prob.num / self.pkts_acked_size.num
+            return min(val, 1)
+            # return self.pkts_acked_size_prob.num / self.pkts_acked_size.num
+        else:
+            return 0
 
     def on_packet_added(self, packet: PacketContext, ts: float):
         pass
@@ -271,6 +316,14 @@ class MonitorBlock(object):
             # print(f'Packet {packet.rtp_id} acked of {packet.size} bytes, ts: {ts}')
             self.pkts_acked_size.append(packet, ts)
             self.pkts_trans_delay_data.append(packet, ts)
+
+            if packet.packet_type == 'video':
+                self.pkts_acked_size_video.append(packet, ts)
+            elif packet.packet_type in ['padding', 'rtx']:
+                self.pkts_acked_size_prob.append(packet, ts)
+            elif packet.packet_type == 'audio':
+                self.pkts_acked_size_audio.append(packet, ts)
+
         if packet.received is not None:
             self.pkts_lost_count.append(packet, ts)
         if self.last_acked_pkt is not None:

@@ -2,8 +2,8 @@ import json
 import os
 from stable_baselines3 import PPO
 from pandia.agent.curriculum_level import CURRICULUM_LEVELS
-from pandia.agent.env_config import ENV_CONFIG
-from pandia.agent.env_emulator import WebRTCEmulatorEnv
+from pandia.agent.env_config_offline import ENV_CONFIG
+from pandia.agent.env_emulator_pure import WebRTCEmulatorEnv_pure
 from pandia.agent.utils import deep_update
 from pandia.model.policies import CustomPolicy
 from pandia.model.ppo_pandia import PandiaPPO
@@ -44,7 +44,7 @@ def main():
                    'config': config}, f)
 
     def make_env():
-        env = WebRTCEmulatorEnv(config=config, curriculum_level=None) # type: ignore
+        env = WebRTCEmulatorEnv_pure(config=config, curriculum_level=None) # type: ignore
         return env
     envs = SubprocVecEnv([make_env for _ in range(env_num)])
     envs = VecMonitor(envs, log_dir)

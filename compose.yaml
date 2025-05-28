@@ -10,23 +10,23 @@ services:
     environment:
       - NVIDIA_DRIVER_CAPABILITIES=all
     restart: always
-  receiver:
-    build: containers/receiver
-    image: johnson163/pandia_receiver
-    environment:
-      - NVIDIA_DRIVER_CAPABILITIES=all
-    restart: always
-    expose:
-      - "9998-9999:9998-9999"
-      - "1-65535/udp"
-  sender:
-    build: containers/sender
-    image: johnson163/pandia_sender
-    depends_on:
-      - receiver
-      - sender_base
-    environment:
-      - NVIDIA_DRIVER_CAPABILITIES=all
-    restart: always
-    expose:
-      - "1-65535/udp"
+  # receiver:
+  #   build: containers/receiver
+  #   image: johnson163/pandia_receiver
+  #   environment:
+  #     - NVIDIA_DRIVER_CAPABILITIES=all
+  #   restart: always
+  #   expose:
+  #     - "9998-9999:9998-9999"
+  #     - "1-65535/udp"
+  # sender:
+  #   build: containers/sender
+  #   image: johnson163/pandia_sender
+  #   depends_on:
+  #     - receiver
+  #     - sender_base
+  #   environment:
+  #     - NVIDIA_DRIVER_CAPABILITIES=all
+  #   restart: always
+  #   expose:
+  #     - "1-65535/udp"

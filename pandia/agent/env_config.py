@@ -7,8 +7,9 @@ RESOLUTION_LIST = [144, 240, 360, 480, 720, 960, 1080, 1440, 2160]
 MIN_BW = 100 * K
 
 NORMALIZATION_RANGE = {
-    'bandwidth': [MIN_BW, 200 * M],
-    'bitrate': [200 * K, 10 * M],
+    'bandwidth': [0, 200 * M],
+    'prediction_bandwidth':[0 * K, 100 * M],
+    'bitrate': [0 * K, 10 * M],
     'fec_rate': [0, 255],
     'fps': [1, 60],
     'delay': [0, 3],
@@ -21,6 +22,7 @@ NORMALIZATION_RANGE = {
 BOUNDARY = {
     # For action
     'fake': [0, 1], # placeholder
+    'prediction_bandwidth': NORMALIZATION_RANGE['prediction_bandwidth'],
     'bitrate': NORMALIZATION_RANGE['bitrate'],
     'fps': NORMALIZATION_RANGE['fps'],
     # Limited by the software implementation,
@@ -83,11 +85,13 @@ VIDEO_SOURCE = {
 }
 
 GYM_SETTING = {
-    'step_duration': .6,
+    # 'step_duration': .6,
+    'step_duration': .1,
     'startup_delay': 1,
     'action_cap': 1, # Cap the bitrate action by the bandwidth
     'duration': 10,
-    'observation_durations' : [.06, .6],
+    # 'observation_durations' : [.06, .6],
+    'observation_durations' : [.1],
     'history_size' : 5,
     # 'history_size' : 41,
     'print_step': False,
@@ -102,8 +106,9 @@ GYM_SETTING = {
 
 ENV_CONFIG = {
     'action_keys' : list(sorted([
-        'bitrate',
-        # 'pacing_rate',
+        'prediction_bandwidth',
+        # 'bitrate',
+        'pacing_rate',
         # 'resolution',
         # 'fps',
         # 'padding_rate',
@@ -133,8 +138,6 @@ ENV_CONFIG = {
         'pkt_trans_delay', 
         'pkt_delay_interval',
         'pkt_loss_rate',
-        'pacing_rate', 
-
         # Internal variable of the network.
         # Should only be used in the value function.
         # 'bandwidth',
@@ -154,8 +157,9 @@ ENV_CONFIG = {
         # "pkt_loss_num"
     ]), # 去除sorted
     'action_static_settings' : {
-        'bitrate': 500 * K,
-        # 'pacing_rate': 200 * M,
+        'bitrate': 0,
+        'prediction_bandwidth': 0,
+        'pacing_rate': 0,
         'pacing_rate': 0,
         # 'fps': 25,
         'fps': 0,
@@ -167,6 +171,7 @@ ENV_CONFIG = {
     },
     'action_invalid_value': {
         'bitrate': 0,
+        'prediction_bandwidth': 0,
         'pacing_rate': 0,
         'fps': 0,
         'fec_rate_key': 256,

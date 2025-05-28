@@ -3,7 +3,11 @@ import os
 
 PROJECT_PATH = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 RESOURCE_PATH = os.path.join(PROJECT_PATH, 'resources')
-RESULTS_PATH = os.path.join(PROJECT_PATH, 'results')
+RESULTS_PATH = os.path.join(PROJECT_PATH, 'results_zte1')
+# RESULTS_PATH = os.path.join(PROJECT_PATH, 'eval_results_new')
+# RESULTS_PATH = os.path.join(PROJECT_PATH, 'results_latest_tc_delay_0.5')
+# RESULTS_PATH = os.path.join(PROJECT_PATH, 'results_limit')
+# RESULTS_PATH = os.path.join(PROJECT_PATH, 'results_jitter')
 DIAGRAMS_PATH = os.path.join(PROJECT_PATH, 'diagrams')
 SCRIPTS_PATH = os.path.join(PROJECT_PATH, 'scripts') 
 BIN_PATH = os.path.join(PROJECT_PATH, 'bin')

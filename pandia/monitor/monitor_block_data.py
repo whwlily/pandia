@@ -16,7 +16,6 @@ class MonitorBlockData(object):
         self.val_fn = val_fn
         self.val_checker = val_checker
         self.ts_offset = ts_offset
-        self.mini = 3
 
     def ts(self, val: Union[FrameContext, PacketContext]):
         return self.ts_fn(val) - self.ts_offset
@@ -25,8 +24,8 @@ class MonitorBlockData(object):
         if self.val_checker(self.val_fn(val)):
             self.data.append(val)
             self.sum += self.val_fn(val) 
-            self.mini = min(self.mini, self.val_fn(val))
         self.update_ts(ts)
+        
 
     def non_empty(self):
         return len(self.data) > 0
@@ -37,20 +36,25 @@ class MonitorBlockData(object):
 
     def avg(self, default_value=0):
         if self.non_empty():
-            return self.sum / len(self.data) if len(self.data) > 0 else 0
+            return self.sum / len(self.data)
         return default_value
 
     def update_ts(self, ts):
-        while len(self.data) > 0 and self.ts(self.data[0]) < ts - self.duration:
+        duration = 0.052 if self.duration == 0.06 else self.duration
+        while (len(self.data) > 0 and self.ts(self.data[0]) < ts - duration):
+        # while (len(self.data) > 0 and self.ts(self.data[0]) < ts - self.duration):
             val = self.data.popleft()
             self.sum -= self.val_fn(val)
-            # 重置mini
-            if self.val_fn(val) == self.mini:
-                self.mini = 3
-                
-        if self.mini == 3:
-            for new_val in list(self.data):
-                self.mini = min(self.mini, self.val_fn(new_val))
+
+    
+    @property
+    def mini(self):
+        val_list = []
+        if self.non_empty():
+            for val in list(self.data):
+                if self.val_checker(self.val_fn(val)):
+                    val_list.append(self.val_fn(val))
+        return min(val_list) if len(val_list) > 0 else math.inf
     
     # def mini(self):
     #     val_list = []

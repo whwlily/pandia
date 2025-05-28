@@ -48,7 +48,8 @@ class WebRTCEmulatorEnv(WebRTCEnv):
               f'--runtime=nvidia --gpus all '\
               f'--cap-add=NET_ADMIN --env NVIDIA_DRIVER_CAPABILITIES=all '\
               f'-v /tmp:/tmp '\
-              f'-v /data2/kj/Workspace/Pandia/media:/app/media '\
+              f'-v /data2/kj/Workspace/Pandia/docker_mnt/media:/app/media '\
+              f'-v /data2/kj/Workspace/Pandia/docker_mnt/traffic_shell:/app/traffic_shell '\
               f'--env PRINT_STEP=True -e SENDER_LOG=/tmp/sender.log --env BANDWIDTH=1000-3000 '\
               f'{"--env NVENC=1" if self.enable_nvenc else ""} '\
               f'{"--env NVDEC=1" if self.enable_nvdec else ""} '\
@@ -190,6 +191,9 @@ gymnasium.register('WebRTCEmulatorEnv', entry_point='pandia.agent.env_emulator:W
 
 def test_single():
     bw = 20 * M
+    test_folder_name = 'eval_gcc'
+    res_folder = os.path.join(RESULTS_PATH, test_folder_name)
+    os.makedirs(res_folder, exist_ok=True)
     config = ENV_CONFIG
     config['network_setting']['bandwidth'] = bw
     config['gym_setting']['print_step'] = True
@@ -217,8 +221,10 @@ def test_single():
     except KeyboardInterrupt:
         pass
     env.close()
-    fig_path = os.path.join(RESULTS_PATH, 'env_emulator_test')
-    generate_diagrams(fig_path, env.context)
+    os.system(f"cp {config['gym_setting']['logging_path']} {res_folder}")
+    log_file = os.path.join(res_folder, 'pandia.log')
+    fig_path = res_folder
+    generate_diagrams(fig_path, env.context, log_file)
 
     plt.close()
     fig, ax1 = plt.subplots()

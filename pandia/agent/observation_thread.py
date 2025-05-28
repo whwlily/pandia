@@ -5,13 +5,14 @@ from struct import unpack
 import threading
 import numpy as np
 import time
+import json
 from typing import Optional
 from pandia.context.frame_context import FrameContext
 from pandia.context.packet_context import PacketContext
 from pandia.context.streaming_context import StreamingContext
 from pandia.log_analyzer_sender import PACKET_TYPES, kTimeWrapPeriod
 
-
+acked_set = set()
 class ObservationThread(threading.Thread):
     def __init__(self, sock, logging_path=None) -> None:
         super().__init__()
@@ -26,6 +27,9 @@ class ObservationThread(threading.Thread):
         else:
             self.logging_file = None
 
+        self.cur_capacity = 0
+        self.frame_map = {}
+
     def stop(self):
         self.stop_event.set()
         self.sock.close()
@@ -38,6 +42,13 @@ class ObservationThread(threading.Thread):
                 continue
             if self.logging_file:
                 self.logging_file.write(data)
+
+            if data[0] == 4:  # 检查标识符
+                rate_info = json.loads(data[1:].decode())  # 解析 JSON 数据
+                # print(f"Received rate: {rate_info['rate']}")
+                self.cur_capacity = rate_info['rate'] # Kbit/s
+                continue
+
             msg_size = unpack('Q', data[:8])[0]
             if msg_size != len(data):
                 print(f'ERROR: msg size {msg_size} != {len(data)}')
@@ -90,6 +101,9 @@ class ObservationThread(threading.Thread):
             if rtp_id > 0:
                 # log(f'Packet sent: {rtp_id}')
                 packet = PacketContext(rtp_id)
+                # print(f'Packet sent rtp_type: {rtp_type}')
+                if first_in_frame:
+                    self.frame_map[int(seq_num)] = int(frame_id)
                 packet.seq_num = seq_num
                 packet.packet_type = PACKET_TYPES[rtp_type]
                 packet.frame_id = frame_id
@@ -101,6 +115,9 @@ class ObservationThread(threading.Thread):
                 context.packets[rtp_id] = packet
                 context.packet_id_map[seq_num] = rtp_id
                 [mb.on_packet_added(packet, ts) for mb in context.monitor_blocks.values()]
+                rtp_type = PACKET_TYPES[rtp_type]
+                # if rtp_type == 'audio':
+                #     print(f'Audio packet: {rtp_id}')
                 if rtp_type == 'rtx':
                     packet.frame_id = context.packets[context.packet_id_map[retrans_seq_num]].frame_id
                 if packet.frame_id > 0 and frame_id in context.frames:
@@ -191,9 +208,12 @@ class ObservationThread(threading.Thread):
             offset = int(time.time() * 1000 / kTimeWrapPeriod) - 1
             received_at = (int(received_at) + offset * kTimeWrapPeriod) / 1000
             rtp_id = int(rtp_id)
-            if rtp_id in context.packets:
+            if rtp_id in context.packets and rtp_id not in context.acked_set:
                 # print(f'Packet acked: {rtp_id}')
+                context.acked_set.add(rtp_id)
                 packet = context.packets[rtp_id]
+                # if packet.packet_type not in ['video', 'audio']:
+                #     print(f'packet {rtp_id} type {packet.packet_type}')
                 packet.received_at_utc = received_at
                 packet.received = lost != 1
                 packet.acked_at = ts
@@ -218,6 +238,11 @@ class ObservationThread(threading.Thread):
                     packet.sent_at_utc = utc
                     context.last_egress_packet_id = max(rtp_id, context.last_egress_packet_id)
                     [mb.on_packet_sent(packet, context.frames.get(packet.frame_id, None), ts) for mb in context.monitor_blocks.values()]
+        elif msg_type == 14:  
+            # ts, rtp_type = unpack('QQ', data)
+            # ts /= 1000
+            # print(f'RTCP feedback: {ts}, {rtp_type}')
+            pass
         else:
             print(f'Unknown message type: {data[0]}')
 

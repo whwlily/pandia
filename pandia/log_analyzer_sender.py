@@ -320,7 +320,7 @@ def main(result_path=os.path.join(RESULTS_PATH, 'eval_static'), sender_log=None)
             print(f"Error parsing line: {line}")
     analyze_stream(context, output_dir=result_path)
 
-
+    
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', '--result_path', type=str, default=os.path.join(RESULTS_PATH, 'eval_static'))

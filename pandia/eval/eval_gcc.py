@@ -18,21 +18,22 @@ def main(bw=8 * M):
     config = ENV_CONFIG
     deep_update(config, CURRICULUM_LEVELS[2])
     config['network_setting']['bandwidth'] = bw
+    # config['network_setting']['bandwidth'] = [7 * M, 8 * M]
     config['network_setting']['delay'] = .008
     config['gym_setting']['print_step'] = True
     config['gym_setting']['action_cap'] = False
-    config['gym_setting']['print_period'] = 0
+    config['gym_setting']['print_period'] = 1
     config['gym_setting']['duration'] = 1000
     config['gym_setting']['skip_slow_start'] = 0
     config['action_keys'] = ['fake']
-    config['gym_setting']['logging_path'] = '/tmp/eval_gcc.log'
+    config['gym_setting']['logging_path'] = '/tmp/eval_gcc_tmp.log'
     env = WebRTCEmulatorEnv(config=config, curriculum_level=None) # type: ignore
     obs, _ = env.reset()
     print(f'Eval with bw: {env.net_sample["bw"] / M:.02f} Mbps')
     rewards = []
     delays = []
     bitrates = []
-    for i in range(100):
+    for i in range(1000):
         action = env.action_space.sample() 
         obs, reward, terminated, truncated, info = env.step(action)
         obs_obj = env.observation
@@ -47,7 +48,7 @@ def main(bw=8 * M):
     env.close()
 
     # Plot evaluation results
-    output_dir = os.path.join(RESULTS_PATH, 'eval_gcc_720_8mbps_longtime')
+    output_dir = os.path.join(RESULTS_PATH, 'eval_gcc_720_8mbps_tmp')
     os.makedirs(output_dir, exist_ok=True)
 
     x = np.arange(len(bitrates)) 

@@ -4,6 +4,8 @@ import os
 import socket
 import subprocess
 import time
+import re
+import threading
 from pandia.agent.action import Action
 from pandia.agent.env_config import ENV_CONFIG
 from pandia.agent.utils import sample
@@ -40,33 +42,92 @@ class ClientProtocol():
               f'ctrl_socket_path: {self.ctrl_socket_path}', flush=True)
 
 
-    def start_simulator(self, bw, delay, loss):
-        bw = int(bw / K)
-        delay = int(delay * 1000)
-        loss = int(loss * 100)
-        print(f'Start sender with bandwidth: {bw} kbps, delay {delay} ms', flush=True)
-        os.system(f"tc qdisc del dev lo root 2> /dev/null")
-        os.system(f"tc qdisc add dev lo root handle 1: netem delay {delay}ms")
-        os.system(f"tc qdisc add dev lo parent 1: handle 2: tbf rate {bw}kbit burst 1500 latency 100ms")
-        if self.sb3_logging_path:
-            log_file = open(self.sb3_logging_path, 'w')
-        else:
-            log_file = subprocess.DEVNULL
-        self.process = \
-            subprocess.Popen(['/app/simulation_Release',
-                              '--obs_socket', self.obs_socket_path,
-                              '--resolution', str(self.height), '--fps', str(self.fps),
-                              '--logging_path', self.logging_path,
-                              '--force_fieldtrials=WebRTC-FlexFEC-03-Advertised/Enabled/WebRTC-FlexFEC-03/Enabled/WebRTC-FrameDropper/Disabled', 
-                              '--path', '/app/media'],
-                              stdout=log_file, stderr=log_file, shell=False)
+    # def start_simulator(self, bw = "02651.json", delay = 30, loss = 0, jitter = 0):
+    #     # bw = int(bw / K)
+    #     bw_file = "/app/traffic_shell/trace_data/" + bw
+    #     # bw_file = bw
+    #     print(f'Start sender with bandwidth: {bw_file} file, delay {delay}ms, loss {loss}, jitter {jitter}ms', flush=True)
+    #     os.system("chmod +x /app/traffic_shell/tc.sh")
+    #     with open("/app/traffic_shell/tc_log.log", "w") as log_file_net:
+    #         subprocess.Popen([f"/app/traffic_shell/tc.sh", str(bw_file), str(delay), str(loss), str(jitter)], stdout=log_file_net, stderr=log_file_net)
+    #     obs_sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+    #     obs_sock.connect(self.obs_socket_path)
+    #     get_tbf_rate(obs_sock)
+    #     self.sb3_logging_path = f'/app/media/sb3.log'
+    #     if self.sb3_logging_path:
+    #         log_file = open(self.sb3_logging_path, 'w')
+    #         print(f'Logging to {self.sb3_logging_path}', flush=True)
+    #     else:
+    #         log_file = subprocess.DEVNULL
+    #     self.process = \
+    #         subprocess.Popen(['/app/simulation_video_save', # simulation_ztw_12.29
+    #                           '--obs_socket', self.obs_socket_path,
+    #                           '--resolution', str(self.height), '--fps', str(self.fps),
+    #                           '--logging_path', self.logging_path,
+    #                           '--force_fieldtrials=WebRTC-FlexFEC-03-Advertised/Enabled/WebRTC-FlexFEC-03/Enabled/WebRTC-FrameDropper/Disabled', 
+    #                           '--path', '/app/media',
+    #                           '--dump_path', '/app/media/res_video'],
+    #                           stdout=log_file, stderr=log_file, shell=False)
+
+    def start_simulator(self, bw="02651.json", delay=30, loss=0, jitter=0):
+        # ==== 2. 重启 tc.sh 网络限制 ====
+        bw_file = "/app/traffic_shell/trace_data/" + bw
+        print(f'Start sender with bandwidth: {bw_file} file, delay {delay}ms, loss {loss}, jitter {jitter}ms', flush=True)
+
+        os.system("chmod +x /app/traffic_shell/tc.sh")
+        tc_log_file = open("/app/traffic_shell/tc_log.log", "w")
+        
+        self.tc_process = subprocess.Popen(
+            ["/app/traffic_shell/tc.sh", str(bw_file), str(delay), str(loss), str(jitter)],
+            stdout=tc_log_file,
+            stderr=tc_log_file
+        )
+
+        # ==== 3. 与观测器通信 ====
+        obs_sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+        obs_sock.connect(self.obs_socket_path)
+        get_tbf_rate(obs_sock)
+
+        # ==== 4. 启动视频模拟子进程 ====
+        self.sb3_logging_path = f'/app/media/sb3.log'
+        log_file = open(self.sb3_logging_path, 'w') if self.sb3_logging_path else subprocess.DEVNULL
+
+        self.process = subprocess.Popen(
+            ['/app/simulation_video_save',
+            '--obs_socket', self.obs_socket_path,
+            '--resolution', str(self.height), '--fps', str(self.fps),
+            '--logging_path', self.logging_path,
+            '--force_fieldtrials=WebRTC-FlexFEC-03-Advertised/Enabled/WebRTC-FlexFEC-03/Enabled/WebRTC-FrameDropper/Disabled',
+            '--path', '/app/media',
+            '--dump_path', '/app/media/res_video'],
+            stdout=log_file, stderr=log_file, shell=False
+        )
+
     
     def datagram_received(self, data: bytes, addr) -> None:
         # Kill the simulation 
         if data[0] == 0:
             print(f'[{time.time()}] Received kill command', flush=True)
-            if self.process:
-                self.process.kill()
+            # ==== 1. 清理旧的 tc.sh 和 video simulation 进程 ====
+            if hasattr(self, 'tc_process') and self.tc_process is not None:
+                try:
+                    self.tc_process.terminate()
+                    self.tc_process.wait(timeout=3)
+                    print("[start_simulator] Previous tc.sh process terminated.", flush=True)
+                except Exception as e:
+                    print(f"[start_simulator] Failed to terminate tc.sh process: {e}", flush=True)
+                    self.tc_process.kill()
+                self.tc_process = None
+
+            if hasattr(self, 'process') and self.process is not None:
+                try:
+                    self.process.terminate()
+                    self.process.wait(timeout=3)
+                    print("[start_simulator] Previous simulation_video_save process terminated.", flush=True)
+                except Exception as e:
+                    print(f"[start_simulator] Failed to terminate simulation_video_save process: {e}", flush=True)
+                    self.process.kill()
+                self.process = None
         # Send the action
         elif data[0] == 1:
             data = data[1:]
@@ -77,9 +138,25 @@ class ClientProtocol():
         elif data[0] == 2:
             config = json.loads(data[1:].decode()) if len(data) > 1 else {}
             print(f'[{time.time()}] Received start command: {config}', flush=True)
-            self.start_simulator(config['bw'], config['delay'], config['loss'])
+            self.start_simulator(config['bw'], config['delay'], config['loss'], config['jitter'])
         else:
             print(f'Unknown command: {data[0]}', flush=True)
+
+def get_tbf_rate(sock):
+    # 执行 tc 命令获取 TBF 速率
+    cmd = ["tc", "-s", "qdisc", "show", "dev", "lo"]
+    result = subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
+    output = result.stdout
+
+    # 正则匹配速率（示例输出：rate 1Mbit）
+    match = re.search(r"qdisc tbf .*? rate (\d+)(\w+)", output)
+    rate = {"rate": int(match.group(1))} if match else {"rate": 0}
+    buf = bytearray(1)
+    buf[0] = 4
+    buf += json.dumps(rate).encode()
+    sock.send(buf)
+    print(f'[{time.time()}] Send rate: {rate}', flush=True)
+    threading.Timer(0.06, get_tbf_rate, [sock]).start()
 
 
 def main():

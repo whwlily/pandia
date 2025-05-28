@@ -1,2 +1,0 @@
-1080p 25fps  690frames
-720p 25fps 14315frames

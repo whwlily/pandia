@@ -21,6 +21,7 @@ class StreamingContext(object):
         self.packet_loss_data = []
         self.fps_data = []
         self.pacing_queue_data = []
+        self.target_bitrate_data = []
         self.codec: Optional[int] = None
         self.last_captured_frame_id = 0
         self.last_decoded_frame_id = 0
@@ -33,6 +34,7 @@ class StreamingContext(object):
         self.last_ts = .0
         self.drl_bitrate = []
         self.drl_pacing_rate = []
+        self.acked_set = set()
 
     def update_utc_offset(self, offset):
         self.utc_offset = offset

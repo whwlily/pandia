@@ -9,8 +9,9 @@
       "type": "debugpy",
       "request": "launch",
       // "module": "pandia.eval.eval_sb3_emulator",
-      "module": "pandia.train.train_sb3_emulator",
-      // "module": "pandia.agent.env_emulator_offline",
+      // "module": "pandia.train.train_sb3_emulator",
+      "module": "pandia.train.train_onrl",
+      // "module": "pandia.log_analyzer_sender",
       // "args": [
       //   // "-m",
       //   // "2",
@@ -20,3 +21,4 @@
     }
   ]
 }
+

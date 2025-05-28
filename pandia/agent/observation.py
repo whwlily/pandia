@@ -2,12 +2,12 @@ import os
 import numpy as np
 from gymnasium import spaces
 from pandia import RESULTS_PATH
-from pandia.agent.env_config import ENV_CONFIG
+from pandia.agent.env_config_offline import ENV_CONFIG
 from pandia.agent.normalization import NORMALIZATION_RANGE, dnml, nml
 from pandia.constants import K, M, G
 from pandia.agent.action import Action
 from typing import Dict, TYPE_CHECKING, List
-
+import time
 
 if TYPE_CHECKING:
     from pandia.monitor.monitor_block import MonitorBlock
@@ -26,7 +26,10 @@ BWE_DATA = [
             "pkt_received_interval",
             "pkt_received_jitter",
             "pkt_loss_ratio",
-            "pkt_loss_num"
+            "pkt_loss_num",
+            "video_pkt_ratio",
+            "audio_pkt_ratio",
+            "prob_pkt_ratio"
         ]
 class Observation(object):
     def __init__(self, obs_keys=ENV_CONFIG['observation_keys'], 
@@ -83,29 +86,35 @@ class Observation(object):
                 res = []
                 # BWE
                 # ss = get_data(data, BWE_DATA)
+                ss = f"receiving_rate: {data[0]/1e6:.02f} mbps, "
+                ss += f"pkt_delay: {data[3]:.02f} ms, "
+                ss += f"pkt_jitter: {data[8]:.02f} ms, "
+                ss += f"pkt_loss: {data[10]:.02f} %, "
+                res.append(ss)
                 # if ss:
                 #     res.append(f'BWE data: [{ss}]')
-                ss = get_data(data, ["frame_encoding_delay", "frame_egress_delay", "frame_recv_delay", "frame_decoding_delay", "frame_decoded_delay"])
-                if ss:
-                    res.append(f'Dly.f (ms): [{ss}]')
-                ss = get_data(data, ["frame_fps", "frame_fps_decoded"])
-                if ss:
-                    res.append(f'FPS: {ss}')
-                ss = get_data(data, ["frame_size", "frame_height", "frame_encoded_height", "frame_key_count"])
-                if ss:
-                    res.append(f'size (bytes): [{ss}]')
-                ss = get_data(data, ["bitrate", "frame_bitrate", "pkt_egress_rate", "pkt_ack_rate", "pacing_rate"])
-                if ss:
-                    res.append(f'rates (mbps): [{ss}]')
-                ss = get_data(data, "bandwidth")
-                if ss and ss != '?':
-                    res.append(f'BW (mbps): {ss}')
-                ss = get_data(data, "frame_qp")
-                if ss and ss != '?':
-                    res.append(f'QP: {ss}')
-                ss = get_data(data, ["pkt_trans_delay", "pkt_delay_interval", "pkt_loss_rate"])
-                if ss:
-                    res.append(f'Dly.p (ms): [{ss}]')
+                # ss = get_data(data, ["frame_encoding_delay", "frame_egress_delay", "frame_recv_delay", "frame_decoding_delay", "frame_decoded_delay"])
+                # if ss:
+                #     res.append(f'Dly.f (ms): [{ss}]')
+                # ss = get_data(data, ["frame_fps", "frame_fps_decoded"])
+                # if ss:
+                #     res.append(f'FPS: {ss}')
+                # ss = get_data(data, ["frame_size", "frame_height", "frame_encoded_height", "frame_key_count"])
+                # if ss:
+                #     res.append(f'size (bytes): [{ss}]')
+                # ss = get_data(data, ["bitrate", "frame_bitrate", "pkt_egress_rate", "pkt_ack_rate", "pacing_rate"])
+                # if ss:
+                #     res.append(f'rates (mbps): [{ss}]')
+                # ss = get_data(data, "bandwidth")
+                # if ss and ss != '?':
+                #     res.append(f'BW (mbps): {ss}')
+                # ss = get_data(data, "frame_qp")
+                # if ss and ss != '?':
+                #     res.append(f'QP: {ss}')
+                # ss = get_data(data, ["pkt_trans_delay", "pkt_delay_interval", "pkt_loss_rate"])
+                # if ss:
+                #     res.append(f'Dly.p (ms): [{ss}]')
+                
                 obs_str_list.append(', '.join(res))
         return f'[{", ".join(obs_str_list)}]'
 
@@ -137,15 +146,25 @@ class Observation(object):
         # return self.data[tuple(zip(*custom_order))]
         
         # history_size = 41
-        bec_array = np.zeros((5, 2, 12), dtype=np.float32)
+        bec_array = np.zeros((5, 2, 15), dtype=np.float32)
         # 提取 5x0x12 由 nparray 的 41[:5]x0x12 组成
         bec_array[:, 0, :] = self.data[:5, 0, :]
         # 提取 5x1x12 由 nparray 的 41[:10]x1x12 组成，但步长为 10
         bec_array[:, 1, :] = self.data[::10, 1, :]
         custom_order = [
-            [i % 5, i // 5 % 2, i // 10] for i in range(5*2*12)
+            [i % 5, i // 5 % 2, i // 10] for i in range(5*2*15)
         ]
         return bec_array[tuple(zip(*custom_order))]
+    
+    def array_onrl(self) -> np.ndarray:
+        bec_array = self.array_bec()
+        onrl_array = np.concatenate([
+            bec_array[0:10] * 1e-6 * 0.4,
+            bec_array[30:40] * 1e-3 * 5,
+            bec_array[80:90] * 1e-2 * 2,
+            bec_array[100:110]
+        ])
+        return onrl_array
     
     
     @staticmethod
@@ -156,6 +175,6 @@ class Observation(object):
         return obs
 
     def observation_space(self) -> spaces.Box:
-        low = np.ones_like(self.data).reshape((-1, )) * NORMALIZATION_RANGE[0]
-        high = np.ones_like(self.data).reshape((-1, )) * NORMALIZATION_RANGE[1]
+        low = np.ones_like(self.array_onrl()).reshape((-1, )) * NORMALIZATION_RANGE[0]
+        high = np.ones_like(self.array_onrl()).reshape((-1, )) * NORMALIZATION_RANGE[1]
         return spaces.Box(low=low, high=high, dtype=np.float32)
