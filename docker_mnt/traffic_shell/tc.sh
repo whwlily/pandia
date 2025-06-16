@@ -112,7 +112,7 @@ while true; do
 
         BW=$(printf "%.0f" "${BANDWIDTHS[i]}")  # 将带宽值转换为整数
         DELAY0=$(printf "%.0f" "${DELAYS[i]}")  # 将延迟值转换为整数
-        LOSS0=$(echo "${LOSS_trace[i]}" | awk '{printf "%d", $1 * 100}')
+        LOSS0=$(echo "${LOSS_trace[i]}" | awk '{printf "%d", $1 * 50}')
 
 
         # 检查 BW 是否在合法范围内

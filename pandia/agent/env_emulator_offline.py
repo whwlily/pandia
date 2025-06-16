@@ -227,7 +227,7 @@ class WebRTCEmulatorEnv_offline(WebRTCEnv):
 gymnasium.register('WebRTCEmulatorEnv_offline', entry_point='pandia.agent.env_emulator_offline:WebRTCEmulatorEnv_offline', 
                    nondeterministic=False)
 
-def test_single(trace_file, is_gcc_model):
+def test_single(trace_file, is_gcc_model, factor_range):
     # model_path = "/data2/kj/Workspace/Pandia/bwe_model/checkpoint_580000.onnx"
     # model_path = "/data2/kj/Workspace/Pandia/bwe_model/iql_checkpoint_140000.onnx"
     # model_path = "/data2/kj/Workspace/Pandia/bwe_model/iql_checkpoint_890000_wo5.onnx"
@@ -263,7 +263,7 @@ def test_single(trace_file, is_gcc_model):
     orts = ort.InferenceSession(model_path, providers=['CUDAExecutionProvider'])
     is_gcc = is_gcc_model
     # model_name = "loss_0.1-wo_fb-factor_auto_2_8_" + os.path.basename(model_path).replace('.onnx', '')
-    model_name = "loss-wo_fb-start-factor_auto_3_5_" + os.path.basename(model_path).replace('.onnx', '')
+    model_name = f"loss_50-wo_fb-start-factor_auto_range_{factor_range[0]}_{factor_range[1]}_" + os.path.basename(model_path).replace('.onnx', '')
     net_config = {
         "bw_file_name": f"{trace_file}",
         "delay": 20,
@@ -271,7 +271,7 @@ def test_single(trace_file, is_gcc_model):
         "loss": 0,
         "limit": 50,
         "is_gcc": is_gcc,
-        "model_name": model_name if not is_gcc else "loss-gcc",
+        "model_name": model_name if not is_gcc else "loss_50-gcc",
         "model_path":  model_path,
         "std_factor": "-0.5, -0.5",
     }
@@ -306,7 +306,7 @@ def test_single(trace_file, is_gcc_model):
     # q_net = q_network("/data2/kj/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-few_state-act_80-r-delay-jitter_0.5-gmm_4-argmax-emulated-v14-be18faef/all_checkpoint_1000000.pt", num_critics=10)
     # q_net = q_network("/data2/kj/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-few_state-act_80-r-delay-jitter_0.5-gmm_4-argmax-emulated_tested-v14-d14f5eed/all_checkpoint_755000.pt", num_critics=10)
     # q_net = q_network("/data2/kj/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-few_state-act_80-r-delay-jitter_1-gmm_4-argmax-emulated_tested-v14-737c533e/all_checkpoint_860000.pt", num_critics=10)
-    q_net = q_network("/data2/kj/Workspace/Pandia/RBWE_model/actor_checkpoint_860000.onnx", num_critics=10)
+    q_net = q_network("/data2/kj/Workspace/Pandia/RBWE_model/all_checkpoint_860000.pt", num_critics=10)
     config = ENV_CONFIG
     config['network_setting']['bandwidth'] = 8 * M
     config['gym_setting']['print_step'] = True
@@ -336,13 +336,15 @@ def test_single(trace_file, is_gcc_model):
     delay_log = []
     bitrate_log = []
     Pi_std_log = []  
+    factor_log_arr = []
+    unc_log_arr = []
 
     # animate
     max_len = 800
     time_steps = []
     bw_queue = []
     bitrate_queue = []
-
+    maybe_bitrate_arr = []
     with open(f"/data2/kj/Workspace/Pandia/docker_mnt/traffic_shell/trace_data/{net_config['bw_file_name']}", "r") as file:
         true_capacity_json = json.load(file)["true_capacity"]
     try:
@@ -431,19 +433,31 @@ def test_single(trace_file, is_gcc_model):
             pi = np.squeeze(pi)
             act, unc = find_mode_and_uncertainty(pi, mean, std, tol=1e-3, epsilon=1e-3)
             # factor = 0.1 if i < 200 else 3
+            maybe_bitrate = []
+            factor_log, unc_log = None, None
             if act:
                 q_mean_val, q_std_val = q_ensemble(q_net, observation, [act])
-                raw_factor = max(min((q_std_val / q_mean_val) * 100, 5), 3)
-                factor = raw_factor / 10 if i < 200 else raw_factor
+                q_mean_val = abs(q_mean_val)
+                factor_log = max(min(q_std_val / q_mean_val, 1), 0)
+                unc_log = unc
+                raw_factor = max(min(factor_log * 100, factor_range[1]), factor_range[0])
+                factor = raw_factor / 10 if i < 100 else raw_factor
                 predict = observation[5] * np.exp(act - factor * unc)
+                for j in [3, 5, 8, 10, 15]:
+                    maybe_bitrate.append(observation[5] * np.exp(act - j * unc))
                 # predict = observation[5] * np.exp(act - 0 * unc) * 0.6
             else:
                 q_mean_val, q_std_val = q_ensemble(q_net, observation, [selected_actions])
-                raw_factor = max(min((q_std_val / q_mean_val) * 100, 5), 3)
-                factor = raw_factor / 10 if i < 200 else raw_factor
+                q_mean_val = abs(q_mean_val)
+                factor_log = max(min(q_std_val / q_mean_val, 1), 0)
+                unc_log = selected_std
+                raw_factor = max(min(factor_log * 100, factor_range[1]), factor_range[0])
+                factor = raw_factor / 10 if i < 100 else raw_factor
                 predict = observation[5] * np.exp(selected_actions - factor * selected_std)
+                for j in [3, 5, 8, 10, 15]:
+                    maybe_bitrate.append(observation[5] * np.exp(selected_actions - j * selected_std))
                 # predict = observation[5] * np.exp(selected_actions - 0 * selected_std) * 0.6
-            q_mean_val = abs(q_mean_val)
+            
             # print(f"factor: {factor:.02f}")
             if np.isnan(predict):
                 predict = pre_act
@@ -486,13 +500,21 @@ def test_single(trace_file, is_gcc_model):
             # Q_std_log.append(q_std_val)
             observation_log.append(observation)
             slope_log.append(0)
-            true_capacity_record.append(env.obs_thread.cur_capacity / K)
+            factor_log_arr.append(factor_log)
+            unc_log_arr.append(unc_log)
+            if env.obs_thread.cur_capacity / K > 10:
+                true_capacity_record.append(true_capacity_record[-1] if true_capacity_record else 0)
+                bw_queue.append(bw_queue[-1] if bw_queue else 0)
+            else:
+                true_capacity_record.append(env.obs_thread.cur_capacity / K)
+                bw_queue.append(env.obs_thread.cur_capacity / K)
             # Pi_std_log.append(abs(bw_prediction[0,0,1]))
             # Pi_std_log.append(np.mean(np.squeeze(std)))
 
             time_steps.append(i * 0.06)
-            bw_queue.append(env.obs_thread.cur_capacity / K)
+            # bw_queue.append(env.obs_thread.cur_capacity / K)
             bitrate_queue.append(r_detail['bitrate'])
+            maybe_bitrate_arr.append(maybe_bitrate)
 
             if i == len(true_capacity_json) - 1 or i >= 1800:
                 break
@@ -524,13 +546,15 @@ def test_single(trace_file, is_gcc_model):
         'Pi_std_log': np.array(Pi_std_log).tolist(),
         'reward': np.array(rewards).tolist(),
         'delay': np.array(delay_log).tolist(),
-        'bitrate': np.array(bitrate_log).tolist()
+        'bitrate': np.array(bitrate_log).tolist(),
+        'factor_log': np.array(factor_log_arr).tolist(),
+        'unc_log': np.array(unc_log_arr).tolist()
     }
     bandwidth_predictions = np.array(bwe_prediction)
     true_capacity = np.array(true_capacity)
     error_rate = np.nanmean(np.abs(bandwidth_predictions - true_capacity) / true_capacity)
     overestimation_values = bandwidth_predictions - true_capacity
-    overestimation_rate = np.mean((overestimation_values[overestimation_values > 0] / true_capacity[overestimation_values > 0]))
+    overestimation_rate = np.nanmean((overestimation_values[overestimation_values > 0] / true_capacity[overestimation_values > 0]))
     underestimation_values = true_capacity - bandwidth_predictions
     underestimation_rate = np.mean((underestimation_values[underestimation_values > 0] / true_capacity[underestimation_values > 0]))
     mse = np.mean((bandwidth_predictions - true_capacity) ** 2)
@@ -550,6 +574,13 @@ def test_single(trace_file, is_gcc_model):
     log_path = os.path.join(res_folder, 'pandia.log')
     fig_path = res_folder
     generate_diagrams(fig_path, env.context, log_path, true_capacity)
+
+    with open(os.path.join(res_folder, f"{trace_file}"), 'rb') as f:
+        frame_delay = json.load(f)['delay']
+        mean_delay = np.mean([d for d in frame_delay if d < 3]) * 1000
+    print('frame_delay: ', mean_delay,'ms')
+    with open(os.path.join(res_folder, f"score.txt"), 'a') as f:
+        f.write(f"frame_mean_delay: {mean_delay}\n")
 
     plt.close()
     plot_2d_res(delay_log, bitrate_log, fig_path)
@@ -592,16 +623,60 @@ def test_single(trace_file, is_gcc_model):
 
     plt.close()
     x = [i * 0.06 for i in range(len(bwe_prediction))]
-    plt.plot(x, bwe_prediction, 'r', label='BWE Prediction')
+    fig, ax1 = plt.subplots()
+    ax1.plot(x, bwe_prediction, 'r', label='BWE Prediction')
     # plt.plot(x, true_capacity, 'g', label='True Capacity')
+    ax1.plot(x, true_capacity_record, 'b', label='True Capacity')
+    ax1.legend()
+    ax1.set_ylabel('Bandwidth (Mbps)')
+
+    ax2 = ax1.twinx()
+    ax2.plot(x, factor_log_arr, 'g', label='factor')
+    ax2.legend()
+    plt.xlabel('Time (s)')
+    plt.savefig(os.path.join(fig_path, f'bwe_prediction_factor.{FIG_EXTENSION}'), dpi=DPI)
+
+    plt.close()
+    x = [i * 0.06 for i in range(len(bwe_prediction))]
+    fig, ax1 = plt.subplots()
+    ax1.plot(x, bwe_prediction, 'r', label='BWE Prediction')
+    # plt.plot(x, true_capacity, 'g', label='True Capacity')
+    ax1.plot(x, true_capacity_record, 'b', label='True Capacity')
+    ax1.legend()
+    ax1.set_ylabel('Bandwidth (Mbps)')
+
+    ax2 = ax1.twinx()
+    ax2.plot(x, unc_log_arr, 'g', label='unc')
+    ax2.legend()
+    plt.xlabel('Time (s)')
+    plt.savefig(os.path.join(fig_path, f'bwe_prediction_unc.{FIG_EXTENSION}'), dpi=DPI)
+
+    plt.close()
+    x = [i * 0.06 for i in range(len(bwe_prediction))]
+    plt.plot(x, bwe_prediction, 'r', label='BWE Prediction')
+    # markers = ['o', 's', '^', 'v', 'D', '*', 'x', '+']
+    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+    for idx, i in enumerate([3, 5, 8, 10, 15]):
+        maybe_bitrate_y = [maybe_bitrate[idx] / M for maybe_bitrate in maybe_bitrate_arr]
+        # plt.plot(x, maybe_bitrate_y, 'g--', label=f'factor-{i}')
+        # marker = markers[idx % len(markers)]
+        color = colors[idx % len(colors)]
+        plt.plot(x, maybe_bitrate_y, 
+                linestyle='--', 
+                linewidth=1, 
+                markersize=4, 
+                color=color, 
+                alpha=0.6,
+                label=f'factor-{i}')
     plt.plot(x, true_capacity_record, 'b', label='True Capacity')
     plt.legend()
     plt.xlabel('Time (s)')
     plt.ylabel('Bandwidth (Mbps)')
     plt.savefig(os.path.join(fig_path, f'bwe_prediction.{FIG_EXTENSION}'), dpi=DPI)
-
     plt.close()
     # cal_vmaf(res_folder)
+
+
     
 
 def cal_vmaf(res_folder):
@@ -947,19 +1022,19 @@ if __name__ == '__main__':
 
     for file in os.listdir("/data2/kj/Workspace/Pandia/docker_mnt/traffic_shell/trace_data"):
         if file.endswith(".json"):
-            need = True
+            exits_test = []
             if os.path.isdir(os.path.join(RESULTS_PATH, "trace_" + file.split('.')[0])):
-                for dir_name in os.listdir(os.path.join(RESULTS_PATH, "trace_" + file.split('.')[0])):
-                    if "loss-wo_fb-start-factor_auto_3_5" in dir_name or "loss-gcc" in dir_name:
-                    # if "wo_fb-factor_start_1_6_auto_3_8" in dir_name:
-                        need = False
-                        break
-            print(f"Trace file: {file}")
-            if need:
-                test_single(file, False)
-                test_single(file, True)
+                exits_test  = [dir_name for dir_name in os.listdir(os.path.join(RESULTS_PATH, "trace_" + file.split('.')[0]))]
+            for factor_range in [[1, 4], [0, 4], [1, 3]]:
+                if any(exits_t.startswith(f"loss_50-wo_fb-start-factor_auto_range_{factor_range[0]}_{factor_range[1]}") for exits_t in exits_test):
+                    print(f"skip {file} with factor_range: {factor_range}")
+                    continue
+                else:
+                    print(f"new test on {file} with factor_range: {factor_range}")
+                    test_single(file, False, factor_range)
+                # test_single(file, True)
 
-    # file = "05900.json"
+    # file = "01525.json"
     # test_single(file, False)
     # test_single(file, True)
 
