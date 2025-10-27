@@ -9,7 +9,7 @@ from stable_baselines3.common.distributions import Distribution
 
 
 class CustomPolicy(ActorCriticPolicy):
-    def forward(self, obs: th.Tensor, deterministic: bool = False) -> Tuple[th.Tensor, th.Tensor, th.Tensor, Distribution]:
+    def forward(self, obs: th.Tensor, deterministic: bool = False) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
         """
         Forward pass in all the networks (actor and critic)
 
@@ -31,5 +31,5 @@ class CustomPolicy(ActorCriticPolicy):
         actions = distribution.get_actions(deterministic=deterministic)
         log_prob = distribution.log_prob(actions)
         actions = actions.reshape((-1, *self.action_space.shape))
-        return actions, values, log_prob, distribution
+        return actions, values, log_prob
 

@@ -42,6 +42,6 @@ def plot_frame_sizes(frame_sizes, frame_types):
     plt.savefig("frame_info.png")
 
 # 主函数调用
-file_path = '/data2/kj/Workspace/Pandia/media/info.log'  # 将此路径替换为你的日志文件路径
+file_path = '/data2/wuhw/Workspace/Pandia/media/info.log'  # 将此路径替换为你的日志文件路径
 frame_sizes, frame_types = read_log_file(file_path)
 plot_frame_sizes(frame_sizes, frame_types)

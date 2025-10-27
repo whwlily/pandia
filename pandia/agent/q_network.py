@@ -256,7 +256,7 @@ def gmm_policy(model_path):
 
 
 if __name__ == "__main__":
-#     q_net = q_network("/data2/kj/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-wo_huber-act_80-v14-a60d1b36/all_checkpoint_1000000.pt")
+#     q_net = q_network("/data2/wuhw/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-wo_huber-act_80-v14-a60d1b36/all_checkpoint_1000000.pt")
 #     test_input = torch.rand(1, 150)
 #     test_action = torch.rand(1, 1)
 #     tim1 = time.time()
@@ -267,7 +267,7 @@ if __name__ == "__main__":
 
     state_dim = 150
     action_dim = 1
-    # state_dict_path = "/data2/kj/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-few_state-act_80-r-delay-jitter_1-gmm_4-argmax-emulated_tested-v14-737c533e/all_checkpoint_860000.pt"
+    # state_dict_path = "/data2/wuhw/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-few_state-act_80-r-delay-jitter_1-gmm_4-argmax-emulated_tested-v14-737c533e/all_checkpoint_860000.pt"
     # # 构建模型
     # model = VectorizedQ(state_dim, action_dim, 10)
     # state_dict = torch.load(state_dict_path)["qf"]
@@ -277,7 +277,7 @@ if __name__ == "__main__":
     # 创建 dummy inputs
     dummy_state = torch.randn(1, state_dim)
     dummy_action = torch.randn(1, action_dim)
-    # onnx_path = "/data2/kj/Workspace/Pandia/pandia/agent/q_network.onnx"
+    # onnx_path = "/data2/wuhw/Workspace/Pandia/pandia/agent/q_network.onnx"
     # # 导出 ONNX
     # torch.onnx.export(
     #     model,
@@ -294,7 +294,7 @@ if __name__ == "__main__":
     # )
 
     # print(f"ONNX model saved to: {onnx_path}")
-    # onnx_path = "/data2/kj/Workspace/Pandia/pandia/agent/q_network.onnx"
+    # onnx_path = "/data2/wuhw/Workspace/Pandia/pandia/agent/q_network.onnx"
     # state = np.random.randn(1, 150).astype(np.float32)
     # action = np.random.randn(1, 1).astype(np.float32)
 
@@ -309,7 +309,7 @@ if __name__ == "__main__":
     # print(f"ONNX inference time: {time.time() - time1:.6f} seconds")
 
 
-    # q_net = q_network("/data2/kj/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-few_state-act_80-r-delay-jitter_1-gmm_4-argmax-emulated_tested-v14-737c533e/all_checkpoint_860000.pt", num_critics=10)
+    # q_net = q_network("/data2/wuhw/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-few_state-act_80-r-delay-jitter_1-gmm_4-argmax-emulated_tested-v14-737c533e/all_checkpoint_860000.pt", num_critics=10)
     # # dummy_state = torch.randn(1, state_dim)
     # # dummy_action = torch.randn(1, action_dim)
     # time2 = time.time()
@@ -318,7 +318,7 @@ if __name__ == "__main__":
     # print(f"Mean: {mean}, Std: {std}")
     # print(f"PyTorch inference time: {time.time() - time2:.6f} seconds")
     # actor = GMMPolicy_NewAct(state_dim=150, act_dim=1, num_components=4, max_action=MAX_ACTION)
-    # state_dict = torch.load("/data2/kj/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-few_state-act_80-r-delay-jitter_1-gmm_4-argmax-emulated_tested-v14-737c533e/actor_checkpoint_860000.pt")
+    # state_dict = torch.load("/data2/wuhw/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-few_state-act_80-r-delay-jitter_1-gmm_4-argmax-emulated_tested-v14-737c533e/actor_checkpoint_860000.pt")
     # actor.load_state_dict(state_dict)
 
     # time1 = time.time()

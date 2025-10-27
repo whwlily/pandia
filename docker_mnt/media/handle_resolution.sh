@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # 定义目录
-SOURCE_DIR="/data2/kj/Workspace/Pandia/docker_mnt/media/source"
-RES_VIDEO_DIR="/data2/kj/Workspace/Pandia/docker_mnt/media/res_video"
+SOURCE_DIR="/data2/wuhw/Workspace/Pandia/docker_mnt/media/source"
+RES_VIDEO_DIR="/data2/wuhw/Workspace/Pandia/docker_mnt/media/res_video"
 
 json_data="$1"
 

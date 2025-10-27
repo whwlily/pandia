@@ -16,7 +16,7 @@ from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.results_plotter import ts2xy, plot_results
-from stable_baselines3.common.monitor import load_results
+from stable_baselines3.common.monitor import load_results, Monitor
 from stable_baselines3.common.vec_env import VecMonitor
 from pandia.agent.utils import deep_update
 from pandia.constants import M
@@ -232,6 +232,7 @@ def main():
     note = f'Train with variable bandwidth and delay. Curriculum level: {curriculum_level}. model_pre: {model_pre}'
     env_num = 12
     log_dir = os.path.expanduser(f'~/sb3_logs/{algo}')
+    os.makedirs(log_dir, exist_ok=True)
     models = [int(d[25:]) for d in os.listdir(log_dir) if d.startswith('WebRTCSimpleSimulatorEnv_')]
     if models:
         model_id = max(models) + 1
@@ -252,8 +253,9 @@ def main():
     def make_env():
         env = WebRTCSimpleSimulatorEnv(config=config, curriculum_level=curriculum_level)
         return env
-    envs = SubprocVecEnv([make_env for _ in range(env_num)])
-    envs = VecMonitor(envs, log_dir)
+    # 使用单个环境进行测试
+    envs = make_env()
+    envs = Monitor(envs, log_dir)
     checkpoint_callback = CheckpointCallback(save_freq=20_000, save_path=log_dir,
                                              name_prefix="WebRTCSimpleSimulatorEnv")
     best_model_callback = SaveOnBestTrainingRewardCallback(check_freq=2_000, log_dir=log_dir)
@@ -263,7 +265,7 @@ def main():
                 tensorboard_log=os.path.expanduser("~/sb3_tensorboard/WebRTCSimpleSimulatorEnv"),
                 device="auto", batch_size=256, n_epochs=20, learning_rate=linear_schedule(0.00001))
     else:
-        model = PPO(policy=CustomPolicy, env=envs, verbose=1, gamma=.8,
+        model = PPO(policy="MlpPolicy", env=envs, verbose=1, gamma=.8,
                     tensorboard_log=os.path.expanduser("~/sb3_tensorboard/WebRTCSimpleSimulatorEnv"),
                     device="auto", batch_size=256, n_epochs=20, learning_rate=linear_schedule(0.0003))
     model.learn(total_timesteps=20_000_000,

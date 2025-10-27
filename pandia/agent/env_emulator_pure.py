@@ -57,8 +57,8 @@ class WebRTCEmulatorEnv_pure(WebRTCEnv):
               f'--runtime=nvidia --gpus all '\
               f'--cap-add=NET_ADMIN --env NVIDIA_DRIVER_CAPABILITIES=all '\
               f'-v /tmp:/tmp '\
-              f'-v /data2/kj/Workspace/Pandia/docker_mnt/media:/app/media '\
-              f'-v /data2/kj/Workspace/Pandia/docker_mnt/traffic_shell:/app/traffic_shell '\
+              f'-v /data2/wuhw/Workspace/Pandia/docker_mnt/media:/app/media '\
+              f'-v /data2/wuhw/Workspace/Pandia/docker_mnt/traffic_shell:/app/traffic_shell '\
               f'--env PRINT_STEP=True -e SENDER_LOG=/tmp/sender.log --env BANDWIDTH=1000-3000 '\
               f'{"--env NVENC=1" if self.enable_nvenc else ""} '\
               f'{"--env NVDEC=1" if self.enable_nvdec else ""} '\
@@ -229,7 +229,7 @@ gymnasium.register('WebRTCEmulatorEnv_pure', entry_point='pandia.agent.env_emula
 
 
 def sample_trace():
-    directory = "/data2/kj/Workspace/Pandia/docker_mnt/traffic_shell/trace_data"
+    directory = "/data2/wuhw/Workspace/Pandia/docker_mnt/traffic_shell/trace_data"
     if not os.path.exists(directory):
         raise FileNotFoundError(f"Directory not found: {directory}")
 
@@ -265,7 +265,7 @@ def test_single(trace_file, is_gcc_model):
     with open(f'{res_folder}/net_config.json', 'w') as json_file:
         json.dump(net_config, json_file, indent=4)
 
-    video_directory = '/data2/kj/Workspace/Pandia/docker_mnt/media/res_video'
+    video_directory = '/data2/wuhw/Workspace/Pandia/docker_mnt/media/res_video'
     # 删除整个目录
     if os.path.exists(video_directory):
         shutil.rmtree(video_directory)
@@ -302,7 +302,7 @@ def test_single(trace_file, is_gcc_model):
     delay_log = []
     bitrate_log = []
     Pi_std_log = []  
-    with open(f"/data2/kj/Workspace/Pandia/docker_mnt/traffic_shell/trace_data/{net_config['bw_file_name']}", "r") as file:
+    with open(f"/data2/wuhw/Workspace/Pandia/docker_mnt/traffic_shell/trace_data/{net_config['bw_file_name']}", "r") as file:
         true_capacity_json = json.load(file)["true_capacity"]
     try:
         env.reset()
@@ -433,7 +433,7 @@ def test_single(trace_file, is_gcc_model):
 
 if __name__ == '__main__':
 
-    # for file in os.listdir("/data2/kj/Workspace/Pandia/docker_mnt/traffic_shell/trace_data"):
+    # for file in os.listdir("/data2/wuhw/Workspace/Pandia/docker_mnt/traffic_shell/trace_data"):
     #     if file.endswith(".json"):
     #         need = True
     #         if os.path.isdir(os.path.join(RESULTS_PATH, "trace_" + file.split('.')[0])):
@@ -450,8 +450,8 @@ if __name__ == '__main__':
     test_single(file, False)
     # test_single(file, True)
 
-    # cal_vmaf("/data2/kj/Workspace/Pandia/results/trace_02683/actor_checkpoint_880000_03121942")
-    # plot_vmaf("/data2/kj/Workspace/Pandia/results/trace_09401/actor_checkpoint_880000_03121632")
+    # cal_vmaf("/data2/wuhw/Workspace/Pandia/results/trace_02683/actor_checkpoint_880000_03121942")
+    # plot_vmaf("/data2/wuhw/Workspace/Pandia/results/trace_09401/actor_checkpoint_880000_03121632")
 
 
 

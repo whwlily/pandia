@@ -202,7 +202,7 @@ class WebRTCSimpleSimulatorEnv(WebRTCEnv):
             self.on_new_frame_added(frame)
             next_new_frame_ts = self.streaming_simulator.next_frame_ts() 
 
-        self.observation.append(self.context.monitor_blocks, act)
+        self.observation.append(self.context.monitor_blocks)
         r = reward(self.context, self.net_sample, actions=self.actions)
 
         if self.print_step and (self.step_count * self.step_duration - self.last_print_ts) >= self.print_period:

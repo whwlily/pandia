@@ -775,7 +775,11 @@ def retrieve_scores(output_dir: str) -> dict:
                     scores['S_U'] = float(match.group(1))
 
     with open(os.path.join(output_dir, 'score.txt'), 'a') as f:
-        f.write(f"Score: {0.2 * scores['S_Delay'] + 0.3 * scores['S_Loss'] + 0.2 * scores['S_U']}\n")
+        # 确保所有必需的分数都存在，如果不存在则使用默认值
+        s_delay = scores.get('S_Delay', 0.0)
+        s_loss = scores.get('S_Loss', 0.0)
+        s_u = scores.get('S_U', 0.0)
+        f.write(f"Score: {0.2 * s_delay + 0.3 * s_loss + 0.2 * s_u}\n")
     return scores
 
 # 示例调用

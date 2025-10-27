@@ -77,7 +77,7 @@ def main():
     #     tensorboard_log="./ppo/tensorboard/"
     # )
     # 加载模型（确保模型路径存在）
-    model = PPO.load("/data2/kj/Workspace/Pandia/ppo/checkpoints_reward11/model_step_105000.zip", env=env)
+    model = PPO.load("/data2/wuhw/Workspace/Pandia/ppo/checkpoints_reward11/model_step_105000.zip", env=env)
 
     net_config_eval = {
         "bw_file_name": f"{trace_file}",
@@ -151,7 +151,7 @@ def evaluat():
     env: WebRTCEmulatorEnv_pure  = gymnasium.make("WebRTCEmulatorEnv_pure", config=config, net_config=net_config,curriculum_level=None) # type: ignore
 
     # 加载保存的最优模型
-    model = PPO.load("/data2/kj/Workspace/Pandia/ppo/checkpoints_reward11/model_step_105000.zip", env=env)
+    model = PPO.load("/data2/wuhw/Workspace/Pandia/ppo/checkpoints_reward11/model_step_105000.zip", env=env)
     n_episodes = 1
     episode_rewards = []
     

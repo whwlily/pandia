@@ -48,8 +48,8 @@ class WebRTCEmulatorEnv(WebRTCEnv):
               f'--runtime=nvidia --gpus all '\
               f'--cap-add=NET_ADMIN --env NVIDIA_DRIVER_CAPABILITIES=all '\
               f'-v /tmp:/tmp '\
-              f'-v /data2/kj/Workspace/Pandia/docker_mnt/media:/app/media '\
-              f'-v /data2/kj/Workspace/Pandia/docker_mnt/traffic_shell:/app/traffic_shell '\
+              f'-v /data2/wuhw/Workspace/Pandia/docker_mnt/media:/app/media '\
+              f'-v /data2/wuhw/Workspace/Pandia/docker_mnt/traffic_shell:/app/traffic_shell '\
               f'--env PRINT_STEP=True -e SENDER_LOG=/tmp/sender.log --env BANDWIDTH=1000-3000 '\
               f'{"--env NVENC=1" if self.enable_nvenc else ""} '\
               f'{"--env NVDEC=1" if self.enable_nvdec else ""} '\

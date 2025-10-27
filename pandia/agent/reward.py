@@ -39,7 +39,11 @@ REWARD_MAX = 200
 
 def reward(context: StreamingContext, net_sample, terminated=False, actions=list()):
     monitor_durations = list(sorted(context.monitor_blocks.keys()))
-    mb = context.monitor_blocks[monitor_durations[1]]
+    # 安全地访问monitor_blocks，避免索引越界
+    if len(monitor_durations) > 1:
+        mb = context.monitor_blocks[monitor_durations[1]]
+    else:
+        mb = context.monitor_blocks[monitor_durations[0]]
     fps_score = 0
     # fps_score = - (1 - np.clip(mb.frame_fps_decoded / 20, 0, 1)) ** 2
     # if mb.frame_fps_decoded < 20:
@@ -80,4 +84,5 @@ def reward(context: StreamingContext, net_sample, terminated=False, actions=list
     r = bit_score - d_score - 10 * mb.pkt_loss_rate
 
     # r = np.clip(r, REWARD_MIN, REWARD_MAX)
-    return r, {"mean_delay": mean_delay, "bitrate": mean_bitrate}
+    # 确保返回的是float32类型的标量值
+    return float(r)

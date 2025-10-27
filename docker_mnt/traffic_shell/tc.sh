@@ -135,7 +135,8 @@ while true; do
             DELAY0=$(printf "%.0f" $(( (DELAY0 - 20) * 10 / 10 + 20 )))
         fi
         # 修改现有的 netem 规则，动态设置延迟
-        tc qdisc change dev lo root handle 1: netem delay ${DELAY0}ms ${JITTER}ms loss ${LOSS0}%
+        #tc qdisc change dev lo root handle 1: netem delay ${DELAY0}ms ${JITTER}ms loss ${LOSS0}%
+        tc qdisc change dev lo root handle 1: netem delay ${DELAY0}ms ${JITTER}ms loss 0%
         # 修改现有的 tbf 规则，动态设置带宽
         tc qdisc change dev lo parent 1: handle 2: tbf rate ${BW}kbit burst 1500 limit 75000
         echo "带宽: ${BW} kbit/s, 延迟: ${DELAY0} ms, 丢包率: ${LOSS0}%" 

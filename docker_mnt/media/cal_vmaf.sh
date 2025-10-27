@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # 定义源视频和接收视频目录
-SOURCE_DIR="/data2/kj/Workspace/Pandia/docker_mnt/media/source"
-RES_VIDEO_DIR="/data2/kj/Workspace/Pandia/docker_mnt/media/res_video"
+SOURCE_DIR="/data2/wuhw/Workspace/Pandia/docker_mnt/media/source"
+RES_VIDEO_DIR="/data2/wuhw/Workspace/Pandia/docker_mnt/media/res_video"
 
 # 定义视频格式
 width=1280
@@ -10,7 +10,7 @@ height=720
 pix_fmt="yuv420p"
 
 # 输出 VMAF 值的文件
-output_file="/data2/kj/Workspace/Pandia/docker_mnt/media/vmaf_scores.txt"
+output_file="/data2/wuhw/Workspace/Pandia/docker_mnt/media/vmaf_scores.txt"
 
 # 清空输出文件
 echo "" > "$output_file"

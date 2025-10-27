@@ -50,8 +50,8 @@ class WebRTCEmulatorEnv_offline(WebRTCEnv):
               f'--runtime=nvidia --gpus all '\
               f'--cap-add=NET_ADMIN --env NVIDIA_DRIVER_CAPABILITIES=all '\
               f'-v /tmp:/tmp '\
-              f'-v /data2/kj/Workspace/Pandia/docker_mnt/media:/app/media '\
-              f'-v /data2/kj/Workspace/Pandia/docker_mnt/traffic_shell:/app/traffic_shell '\
+              f'-v /data2/wuhw/Workspace/Pandia/docker_mnt/media:/app/media '\
+              f'-v /data2/wuhw/Workspace/Pandia/docker_mnt/traffic_shell:/app/traffic_shell '\
               f'--env PRINT_STEP=True -e SENDER_LOG=/tmp/sender.log --env BANDWIDTH=1000-3000 '\
               f'{"--env NVENC=1" if self.enable_nvenc else ""} '\
               f'{"--env NVDEC=1" if self.enable_nvdec else ""} '\
@@ -241,8 +241,8 @@ def test_single():
         bitrates = [0 * K]
         observation = None
         hidden_state, cell_state = np.zeros((1, 1), dtype=np.float32), np.zeros((1, 1), dtype=np.float32)
-        # model_path = "/data2/kj/Workspace/Pandia/bwe_model/checkpoint_580000.onnx"
-        model_path = "/data2/kj/Workspace/Pandia/bwe_model/iql_checkpoint_140000.onnx"
+        # model_path = "/data2/wuhw/Workspace/Pandia/bwe_model/checkpoint_580000.onnx"
+        model_path = "/data2/wuhw/Workspace/Pandia/bwe_model/iql_checkpoint_140000.onnx"
         orts = ort.InferenceSession(model_path)
         for i, bitrate in enumerate(bitrates):
             pre_bw = bitrates[i-1] if i > 0 else 1 * M

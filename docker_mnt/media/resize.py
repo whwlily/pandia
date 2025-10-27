@@ -112,7 +112,7 @@ def process_directory(input_dir, output_dir):
 
 
 # 示例：处理当前目录下的 yuv 文件，存到 output 目录
-process_directory("/data2/kj/Workspace/Pandia/docker_mnt/media/res_video", "/data2/kj/Workspace/Pandia/docker_mnt/media/resized")
+process_directory("/data2/wuhw/Workspace/Pandia/docker_mnt/media/res_video", "/data2/wuhw/Workspace/Pandia/docker_mnt/media/resized")
 
 # import os
 # import cv2
@@ -180,6 +180,6 @@ process_directory("/data2/kj/Workspace/Pandia/docker_mnt/media/res_video", "/dat
 #     print(f"已保存: {output_png}")
 
 # 测试
-# process_yuv_file("/data2/kj/Workspace/Pandia/docker_mnt/media/res_video/received_719.yuv", "output.png")
+# process_yuv_file("/data2/wuhw/Workspace/Pandia/docker_mnt/media/res_video/received_719.yuv", "output.png")
 
 

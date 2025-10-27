@@ -50,7 +50,7 @@ def test_single(trace_file, is_gcc_model):
     with open(f'{res_folder}/net_config.json', 'w') as json_file:
         json.dump(net_config, json_file, indent=4)
 
-    video_directory = '/data2/kj/Workspace/Pandia/docker_mnt/media/res_video'
+    video_directory = '/data2/wuhw/Workspace/Pandia/docker_mnt/media/res_video'
     # 删除整个目录
     if os.path.exists(video_directory):
         shutil.rmtree(video_directory)
@@ -74,9 +74,9 @@ def test_single(trace_file, is_gcc_model):
     config['gym_setting']['action_cap'] = False
     env: WebRTCEmulatorEnv_pure = gymnasium.make("WebRTCEmulatorEnv_pure", config=config, net_config=net_config, curriculum_level=None) # type: ignore
     # 加载保存的最优模型
-    model = PPO.load("/data2/kj/Workspace/Pandia/ppo/checkpoints_reward12/model_step_15000.zip", env=env)
-    # model = PPO.load("/data2/kj/Workspace/Pandia/ppo/checkpoints_reward13/model_step_45000.zip", env=env)
-    # model = PPO.load("/data2/kj/Workspace/Pandia/ppo/checkpoints_reward14/model_step_15000.zip", env=env)
+    model = PPO.load("/data2/wuhw/Workspace/Pandia/ppo/checkpoints_reward12/model_step_15000.zip", env=env)
+    # model = PPO.load("/data2/wuhw/Workspace/Pandia/ppo/checkpoints_reward13/model_step_45000.zip", env=env)
+    # model = PPO.load("/data2/wuhw/Workspace/Pandia/ppo/checkpoints_reward14/model_step_15000.zip", env=env)
 
     # action = Action(config['action_keys'])
     actions = []
@@ -96,7 +96,7 @@ def test_single(trace_file, is_gcc_model):
     bw_queue = []
     bitrate_queue = []
 
-    with open(f"/data2/kj/Workspace/Pandia/docker_mnt/traffic_shell/trace_data/{net_config['bw_file_name']}", "r") as file:
+    with open(f"/data2/wuhw/Workspace/Pandia/docker_mnt/traffic_shell/trace_data/{net_config['bw_file_name']}", "r") as file:
         true_capacity_json = json.load(file)["true_capacity"]
     try:
         obs, _ = env.reset()
@@ -272,7 +272,7 @@ def cal_vmaf(res_folder):
     remove_pattern_lines()
     concatenate_lines()
 
-    log_file_path = '/data2/kj/Workspace/Pandia/docker_mnt/media/sb3.log'
+    log_file_path = '/data2/wuhw/Workspace/Pandia/docker_mnt/media/sb3.log'
     seq_fid_map = {}
     qp_map = {} 
     # pattern = re.compile(r"seq: (\d+), first in frame: 1, last in frame: (\d+), fid: (\d+)")
@@ -300,7 +300,7 @@ def cal_vmaf(res_folder):
         if str(fid) not in qp_map:
             print(f"seq: {seq}, fid: {fid} not found in qp_map")
     print(f"Total: {i} frames, {j} qp frames")
-    directory = '/data2/kj/Workspace/Pandia/docker_mnt/media/res_video'
+    directory = '/data2/wuhw/Workspace/Pandia/docker_mnt/media/res_video'
     print(f"Total: {len(os.listdir(directory))} frames")
     for filename in os.listdir(directory):
         match = re.match(r"received_(\d+)\.yuv", filename)
@@ -312,14 +312,14 @@ def cal_vmaf(res_folder):
                 new_filepath = os.path.join(directory, new_filename)
                 os.rename(old_filepath, new_filepath)
 
-    os.system("chmod +x /data2/kj/Workspace/Pandia/docker_mnt/media/handle_resolution.sh")
+    os.system("chmod +x /data2/wuhw/Workspace/Pandia/docker_mnt/media/handle_resolution.sh")
     call_handle_resolution_script(qp_map, os.path.join(res_folder, "handle_resolution.log"))
 
-    os.system("chmod +x /data2/kj/Workspace/Pandia/docker_mnt/media/cal_vmaf.sh")
+    os.system("chmod +x /data2/wuhw/Workspace/Pandia/docker_mnt/media/cal_vmaf.sh")
     vmaf_log = os.path.join(res_folder, "cal_vmaf.log")
-    os.system(f"bash /data2/kj/Workspace/Pandia/docker_mnt/media/cal_vmaf.sh > {vmaf_log} 2>&1")
+    os.system(f"bash /data2/wuhw/Workspace/Pandia/docker_mnt/media/cal_vmaf.sh > {vmaf_log} 2>&1")
     
-    os.system(f"cp /data2/kj/Workspace/Pandia/docker_mnt/media/vmaf_scores.txt {res_folder}")
+    os.system(f"cp /data2/wuhw/Workspace/Pandia/docker_mnt/media/vmaf_scores.txt {res_folder}")
 
     plot_vmaf(res_folder)
 
@@ -330,7 +330,7 @@ def call_handle_resolution_script(qp_map, log_file_path):
     # 调用 shell 脚本并传递 JSON 参数
     with open(log_file_path, "w") as log_file:
         subprocess.run(
-            ["bash", "/data2/kj/Workspace/Pandia/docker_mnt/media/handle_resolution.sh", json_params],
+            ["bash", "/data2/wuhw/Workspace/Pandia/docker_mnt/media/handle_resolution.sh", json_params],
             stdout=log_file,
             stderr=subprocess.STDOUT,
             check=True
@@ -397,7 +397,7 @@ def plot_vmaf(res_folder):
 
 
 def remove_pattern_lines():
-    log_file_path = '/data2/kj/Workspace/Pandia/docker_mnt/media/sb3.log'
+    log_file_path = '/data2/wuhw/Workspace/Pandia/docker_mnt/media/sb3.log'
     temp_file_path = log_file_path + ".tmp"
     pattern = re.compile(r"^(.*?)\(.*\):")
 
@@ -418,7 +418,7 @@ def remove_pattern_lines():
     os.replace(temp_file_path, log_file_path)
 
 def concatenate_lines():
-    log_file_path = '/data2/kj/Workspace/Pandia/docker_mnt/media/sb3.log'
+    log_file_path = '/data2/wuhw/Workspace/Pandia/docker_mnt/media/sb3.log'
     temp_file_path = log_file_path + ".tmp"
     buffer = ""
     with open(log_file_path, 'r') as file, open(temp_file_path, 'w') as temp_file:
@@ -498,7 +498,7 @@ def trend_detector(d_arr, last_gamma = 20):
 
 
 if __name__ == '__main__':
-    # for file in os.listdir("/data2/kj/Workspace/Pandia/docker_mnt/traffic_shell/trace_data"):
+    # for file in os.listdir("/data2/wuhw/Workspace/Pandia/docker_mnt/traffic_shell/trace_data"):
     #     if file.endswith(".json"):
     #         need = True
     #         if os.path.isdir(os.path.join(RESULTS_PATH, "trace_" + file.split('.')[0])):
@@ -518,8 +518,8 @@ if __name__ == '__main__':
     test_single(file, False)
     # test_single(file, True)
 
-    # cal_vmaf("/data2/kj/Workspace/Pandia/results/trace_02683/actor_checkpoint_880000_03121942")
-    # plot_vmaf("/data2/kj/Workspace/Pandia/results/trace_09401/actor_checkpoint_880000_03121632")
+    # cal_vmaf("/data2/wuhw/Workspace/Pandia/results/trace_02683/actor_checkpoint_880000_03121942")
+    # plot_vmaf("/data2/wuhw/Workspace/Pandia/results/trace_09401/actor_checkpoint_880000_03121632")
 
 
 

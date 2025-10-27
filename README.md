@@ -1,5 +1,4 @@
-Pandia: Open-source Framework for DRL-based Real-time Video Streaming Control
-===
+==
 **NOTE: Please switch to the [mmsys24 branch](https://github.com/johnson-li/Pandia/tree/mmsys24) to check the submission code.**
 
 Pandia uses DRL to improve the video streaming performance of WebRTC. This repo implements the DRL model and the training/evaluation framework. The customized WebRTC is implemented in [another repo](https://github.com/johnson-li/webrtc/tree/pandia). This repo invokes WebRTC via containers. So, there is no need to compile WebRTC by yourself for ordinary use.
@@ -43,7 +42,8 @@ The code is verified on Ubuntu 22.04.3 LTS and Python 3.8.17. It is recommended 
 
 ```bash
 pip install -r requirements.txt
-```
+```Pandia: Open-source Framework for DRL-based Real-time Video Streaming Control
+=
 
 Containers
 ===
@@ -59,3 +59,12 @@ User Case 2: Dedicated Sender and Receiver
 ===
 
 Please check [SENDER_RECEIVER.md](SENDER_RECEIVER.md)
+
+
+激活pandia环境 conda activate pandia
+
+简单调试 python -m pandia.train.train_sb3_simple_simulator
+
+离线测试 python -m pandia.agent.env_emulator_offline
+删除中断程序产生的yuv文件 ./cleanup_yuv.sh
+自动化测试 ./auto_test.sh

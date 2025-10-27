@@ -2,7 +2,7 @@ import os
 import numpy as np
 from gymnasium import spaces
 from pandia import RESULTS_PATH
-from pandia.agent.env_config_offline import ENV_CONFIG
+from pandia.agent.env_config import ENV_CONFIG
 from pandia.agent.normalization import NORMALIZATION_RANGE, dnml, nml
 from pandia.constants import K, M, G
 from pandia.agent.action import Action
@@ -86,10 +86,11 @@ class Observation(object):
                 res = []
                 # BWE
                 # ss = get_data(data, BWE_DATA)
-                ss = f"receiving_rate: {data[0]/1e6:.02f} mbps, "
-                ss += f"pkt_delay: {data[3]:.02f} ms, "
-                ss += f"pkt_jitter: {data[8]:.02f} ms, "
-                ss += f"pkt_loss: {data[10]:.02f} %, "
+                # 安全地访问数组元素，避免索引越界
+                ss = f"receiving_rate: {data[0]/1e6:.02f} mbps, " if len(data) > 0 else "receiving_rate: 0.00 mbps, "
+                ss += f"pkt_delay: {data[3]:.02f} ms, " if len(data) > 3 else "pkt_delay: 0.00 ms, "
+                ss += f"pkt_jitter: {data[8]:.02f} ms, " if len(data) > 8 else "pkt_jitter: 0.00 ms, "
+                ss += f"pkt_loss: {data[10]:.02f} %, " if len(data) > 10 else "pkt_loss: 0.00 %, "
                 res.append(ss)
                 # if ss:
                 #     res.append(f'BWE data: [{ss}]')
@@ -146,25 +147,20 @@ class Observation(object):
         # return self.data[tuple(zip(*custom_order))]
         
         # history_size = 41
-        bec_array = np.zeros((5, 2, 15), dtype=np.float32)
-        # 提取 5x0x12 由 nparray 的 41[:5]x0x12 组成
+        obs_dim = len(self.obs_keys)  # 动态获取观察维度
+        bec_array = np.zeros((5, 2, obs_dim), dtype=np.float32)
+        # 提取 5x0xobs_dim 由 nparray 的 5x0xobs_dim 组成
         bec_array[:, 0, :] = self.data[:5, 0, :]
-        # 提取 5x1x12 由 nparray 的 41[:10]x1x12 组成，但步长为 10
-        bec_array[:, 1, :] = self.data[::10, 1, :]
+        # 提取 5x1xobs_dim 由 nparray 的 5x1xobs_dim 组成
+        bec_array[:, 1, :] = self.data[:5, 1, :] if self.data.shape[1] > 1 else self.data[:5, 0, :]
         custom_order = [
-            [i % 5, i // 5 % 2, i // 10] for i in range(5*2*15)
+            [i % 5, i // 5 % 2, i // 10] for i in range(5*2*obs_dim)
         ]
         return bec_array[tuple(zip(*custom_order))]
     
     def array_onrl(self) -> np.ndarray:
-        bec_array = self.array_bec()
-        onrl_array = np.concatenate([
-            bec_array[0:10] * 1e-6 * 0.4,
-            bec_array[30:40] * 1e-3 * 5,
-            bec_array[80:90] * 1e-2 * 2,
-            bec_array[100:110]
-        ])
-        return onrl_array
+        # 直接返回data的扁平化版本
+        return self.data.flatten()
     
     
     @staticmethod

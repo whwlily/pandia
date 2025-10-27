@@ -61,8 +61,8 @@ class WebRTCEmulatorEnv_offline(WebRTCEnv):
               f'--runtime=nvidia --gpus all '\
               f'--cap-add=NET_ADMIN --env NVIDIA_DRIVER_CAPABILITIES=all '\
               f'-v /tmp:/tmp '\
-              f'-v /data2/kj/Workspace/Pandia/docker_mnt/media:/app/media '\
-              f'-v /data2/kj/Workspace/Pandia/docker_mnt/traffic_shell:/app/traffic_shell '\
+              f'-v /data2/wuhw/Workspace/Pandia/docker_mnt/media:/app/media '\
+              f'-v /data2/wuhw/Workspace/Pandia/docker_mnt/traffic_shell:/app/traffic_shell '\
               f'--env PRINT_STEP=True -e SENDER_LOG=/tmp/sender.log --env BANDWIDTH=1000-3000 '\
               f'{"--env NVENC=1" if self.enable_nvenc else ""} '\
               f'{"--env NVDEC=1" if self.enable_nvdec else ""} '\
@@ -222,22 +222,22 @@ gymnasium.register('WebRTCEmulatorEnv_offline', entry_point='pandia.agent.env_em
 
 
 def test_single(trace_file, is_gcc_model):
-    # model_path = "/data2/kj/Workspace/Pandia/bwe_model/checkpoint_580000.onnx"
-    # model_path = "/data2/kj/Workspace/Pandia/bwe_model/iql_checkpoint_140000.onnx"
-    # model_path = "/data2/kj/Workspace/Pandia/bwe_model/iql_checkpoint_890000_wo5.onnx"
-    # model_path = "/data2/kj/Schaferct/code/checkpoints_iql/new_act-beta-3.0-v2&v5_1_5-wo_5-new_reward_nonlinear-big-v14-26e77af4/actor_checkpoint_1000000.onnx"
-    # model_path = "/data2/kj/Workspace/Pandia/bwe_model/baseline.onnx"
-    # model_path = "/data2/kj/Workspace/Pandia/bwe_model/Schaferct.onnx"
-    # model_path = "/data2/kj/Workspace/Pandia/bwe_model/few_state_checkpoint_790000.onnx"
-    # model_path = "/data2/kj/SRPO/BWE_policy_models/BWE_behavior-new_act-K1800--2-4/policy_ckpt180.onnx"
-    # model_path = "/data2/kj/Workspace/Pandia/bwe_model/actor_checkpoint_1000000_v2_v3_v4_80%.onnx"
-    # model_path = "/data2/kj/Workspace/Pandia/bwe_model/TEN-TMS_model.onnx"
-    # model_path = "/data2/kj/Workspace/Pandia/bwe_model/actor_checkpoint_1000000_riql_act80.onnx"
-    # model_path = "/data2/kj/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-few_state-v2_v3_v4_80%-v14-4cf3978e/actor_checkpoint_1000000.onnx"
-    # model_path = "/data2/kj/Workspace/Pandia/bwe_model/actor_checkpoint_1000000_log_act.onnx"
-     # model_path = "/data2/kj/Workspace/Pandia/bwe_model/actor_checkpoint_1000000_act80.onnx"
-    # model_path = "/data2/kj/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-few_state-act_80-v14-a5954cd3/actor_checkpoint_95000.onnx"
-    model_path = "/data2/kj/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-few_state-act_80-gmm-argmax-v14-73f1c99c/actor_checkpoint_880000.onnx"
+    # model_path = "/data2/wuhw/Workspace/Pandia/bwe_model/checkpoint_580000.onnx"
+    # model_path = "/data2/wuhw/Workspace/Pandia/bwe_model/iql_checkpoint_140000.onnx"
+    # model_path = "/data2/wuhw/Workspace/Pandia/bwe_model/iql_checkpoint_890000_wo5.onnx"
+    # model_path = "/data2/wuhw/Schaferct/code/checkpoints_iql/new_act-beta-3.0-v2&v5_1_5-wo_5-new_reward_nonlinear-big-v14-26e77af4/actor_checkpoint_1000000.onnx"
+    # model_path = "/data2/wuhw/Workspace/Pandia/bwe_model/baseline.onnx"
+    # model_path = "/data2/wuhw/Workspace/Pandia/bwe_model/Schaferct.onnx"
+    # model_path = "/data2/wuhw/Workspace/Pandia/bwe_model/few_state_checkpoint_790000.onnx"
+    # model_path = "/data2/wuhw/SRPO/BWE_policy_models/BWE_behavior-new_act-K1800--2-4/policy_ckpt180.onnx"
+    # model_path = "/data2/wuhw/Workspace/Pandia/bwe_model/actor_checkpoint_1000000_v2_v3_v4_80%.onnx"
+    # model_path = "/data2/wuhw/Workspace/Pandia/bwe_model/TEN-TMS_model.onnx"
+    # model_path = "/data2/wuhw/Workspace/Pandia/bwe_model/actor_checkpoint_1000000_riql_act80.onnx"
+    # model_path = "/data2/wuhw/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-few_state-v2_v3_v4_80%-v14-4cf3978e/actor_checkpoint_1000000.onnx"
+    # model_path = "/data2/wuhw/Workspace/Pandia/bwe_model/actor_checkpoint_1000000_log_act.onnx"
+     # model_path = "/data2/wuhw/Workspace/Pandia/bwe_model/actor_checkpoint_1000000_act80.onnx"
+    # model_path = "/data2/wuhw/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-few_state-act_80-v14-a5954cd3/actor_checkpoint_95000.onnx"
+    model_path = "/data2/wuhw/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-few_state-act_80-gmm-argmax-v14-73f1c99c/actor_checkpoint_880000.onnx"
     orts = ort.InferenceSession(model_path)
     is_gcc = is_gcc_model
     model_name = os.path.basename(model_path).replace('.onnx', '')
@@ -259,18 +259,18 @@ def test_single(trace_file, is_gcc_model):
     with open(f'{res_folder}/net_config.json', 'w') as json_file:
         json.dump(net_config, json_file, indent=4)
 
-    video_directory = '/data2/kj/Workspace/Pandia/docker_mnt/media/res_video'
+    video_directory = '/data2/wuhw/Workspace/Pandia/docker_mnt/media/res_video'
     # 删除整个目录
     if os.path.exists(video_directory):
         shutil.rmtree(video_directory)
     # 重新创建一个空目录
     os.makedirs(video_directory, exist_ok=True)
     # Q网络
-    # q_net = q_network("/data2/kj/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-few_state-slope_reward_act80-v14-28227848/all_checkpoint_1000000.pt")
-    # q_net = q_network("/data2/kj/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-few_state-v2_v3_v4_80%-v14-4eb63d30/all_checkpoint_1000000.pt")
-    # q_net = q_network("/data2/kj/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-few_state-v2_v3_v4_80%-v14-4cf3978e/all_checkpoint_1000000.pt")
-    # q_net = q_network("/data2/kj/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-few_state-log_action-v14-df63f4c1/all_checkpoint_1000000.pt")
-    q_net = q_network("/data2/kj/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-few_state-act_80-gmm-argmax-v14-73f1c99c/all_checkpoint_880000.pt")
+    # q_net = q_network("/data2/wuhw/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-few_state-slope_reward_act80-v14-28227848/all_checkpoint_1000000.pt")
+    # q_net = q_network("/data2/wuhw/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-few_state-v2_v3_v4_80%-v14-4eb63d30/all_checkpoint_1000000.pt")
+    # q_net = q_network("/data2/wuhw/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-few_state-v2_v3_v4_80%-v14-4cf3978e/all_checkpoint_1000000.pt")
+    # q_net = q_network("/data2/wuhw/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-few_state-log_action-v14-df63f4c1/all_checkpoint_1000000.pt")
+    q_net = q_network("/data2/wuhw/Schaferct/code/checkpoints_iql/riql-new_act-beta_3.0-quantile_0-sigma_0.5-K1800-few_state-act_80-gmm-argmax-v14-73f1c99c/all_checkpoint_880000.pt")
 
     config = ENV_CONFIG
     config['network_setting']['bandwidth'] = 8 * M
@@ -301,7 +301,7 @@ def test_single(trace_file, is_gcc_model):
     delay_log = []
     bitrate_log = []
     Pi_std_log = []  
-    with open(f"/data2/kj/Workspace/Pandia/docker_mnt/traffic_shell/trace_data/{net_config['bw_file_name']}", "r") as file:
+    with open(f"/data2/wuhw/Workspace/Pandia/docker_mnt/traffic_shell/trace_data/{net_config['bw_file_name']}", "r") as file:
         true_capacity_json = json.load(file)["true_capacity"]
     try:
         env.reset()
@@ -518,7 +518,7 @@ def cal_vmaf(res_folder):
     remove_pattern_lines()
     concatenate_lines()
 
-    log_file_path = '/data2/kj/Workspace/Pandia/docker_mnt/media/sb3.log'
+    log_file_path = '/data2/wuhw/Workspace/Pandia/docker_mnt/media/sb3.log'
     seq_fid_map = {}
     qp_map = {} 
     # pattern = re.compile(r"seq: (\d+), first in frame: 1, last in frame: (\d+), fid: (\d+)")
@@ -546,7 +546,7 @@ def cal_vmaf(res_folder):
         if str(fid) not in qp_map:
             print(f"seq: {seq}, fid: {fid} not found in qp_map")
     print(f"Total: {i} frames, {j} qp frames")
-    directory = '/data2/kj/Workspace/Pandia/docker_mnt/media/res_video'
+    directory = '/data2/wuhw/Workspace/Pandia/docker_mnt/media/res_video'
     print(f"Total: {len(os.listdir(directory))} frames")
     for filename in os.listdir(directory):
         match = re.match(r"received_(\d+)\.yuv", filename)
@@ -558,14 +558,14 @@ def cal_vmaf(res_folder):
                 new_filepath = os.path.join(directory, new_filename)
                 os.rename(old_filepath, new_filepath)
 
-    os.system("chmod +x /data2/kj/Workspace/Pandia/docker_mnt/media/handle_resolution.sh")
+    os.system("chmod +x /data2/wuhw/Workspace/Pandia/docker_mnt/media/handle_resolution.sh")
     call_handle_resolution_script(qp_map, os.path.join(res_folder, "handle_resolution.log"))
 
-    os.system("chmod +x /data2/kj/Workspace/Pandia/docker_mnt/media/cal_vmaf.sh")
+    os.system("chmod +x /data2/wuhw/Workspace/Pandia/docker_mnt/media/cal_vmaf.sh")
     vmaf_log = os.path.join(res_folder, "cal_vmaf.log")
-    os.system(f"bash /data2/kj/Workspace/Pandia/docker_mnt/media/cal_vmaf.sh > {vmaf_log} 2>&1")
+    os.system(f"bash /data2/wuhw/Workspace/Pandia/docker_mnt/media/cal_vmaf.sh > {vmaf_log} 2>&1")
     
-    os.system(f"cp /data2/kj/Workspace/Pandia/docker_mnt/media/vmaf_scores.txt {res_folder}")
+    os.system(f"cp /data2/wuhw/Workspace/Pandia/docker_mnt/media/vmaf_scores.txt {res_folder}")
 
     plot_vmaf(res_folder)
 
@@ -576,7 +576,7 @@ def call_handle_resolution_script(qp_map, log_file_path):
     # 调用 shell 脚本并传递 JSON 参数
     with open(log_file_path, "w") as log_file:
         subprocess.run(
-            ["bash", "/data2/kj/Workspace/Pandia/docker_mnt/media/handle_resolution.sh", json_params],
+            ["bash", "/data2/wuhw/Workspace/Pandia/docker_mnt/media/handle_resolution.sh", json_params],
             stdout=log_file,
             stderr=subprocess.STDOUT,
             check=True
@@ -643,7 +643,7 @@ def plot_vmaf(res_folder):
 
 
 def remove_pattern_lines():
-    log_file_path = '/data2/kj/Workspace/Pandia/docker_mnt/media/sb3.log'
+    log_file_path = '/data2/wuhw/Workspace/Pandia/docker_mnt/media/sb3.log'
     temp_file_path = log_file_path + ".tmp"
     pattern = re.compile(r"^(.*?)\(.*\):")
 
@@ -664,7 +664,7 @@ def remove_pattern_lines():
     os.replace(temp_file_path, log_file_path)
 
 def concatenate_lines():
-    log_file_path = '/data2/kj/Workspace/Pandia/docker_mnt/media/sb3.log'
+    log_file_path = '/data2/wuhw/Workspace/Pandia/docker_mnt/media/sb3.log'
     temp_file_path = log_file_path + ".tmp"
     buffer = ""
     with open(log_file_path, 'r') as file, open(temp_file_path, 'w') as temp_file:
@@ -855,7 +855,7 @@ def find_mode_and_uncertainty(pi, mu, sigma, initial_guess=None, tol=1e-4, epsil
 
 if __name__ == '__main__':
 
-    # for file in os.listdir("/data2/kj/Workspace/Pandia/docker_mnt/traffic_shell/trace_data"):
+    # for file in os.listdir("/data2/wuhw/Workspace/Pandia/docker_mnt/traffic_shell/trace_data"):
         # if file.endswith(".json"):
         #     print(f"Trace file: {file}")
         #     test_single(file, False)
@@ -865,13 +865,13 @@ if __name__ == '__main__':
     # test_single(file, False)
     # # test_single(file, True)
 
-    # cal_vmaf("/data2/kj/Workspace/Pandia/results/trace_02683/actor_checkpoint_880000_03121942")
-    # plot_vmaf("/data2/kj/Workspace/Pandia/results/trace_09401/actor_checkpoint_880000_03121632")
+    # cal_vmaf("/data2/wuhw/Workspace/Pandia/results/trace_02683/actor_checkpoint_880000_03121942")
+    # plot_vmaf("/data2/wuhw/Workspace/Pandia/results/trace_09401/actor_checkpoint_880000_03121632")
 
-    trace_file = "/data2/kj/Schaferct/ALLdatasets/emulated_dataset_policy"
-    for policy in os.listdir("/data2/kj/Schaferct/code/eval_list"):
-        for bw_range in os.listdir(f"/data2/kj/Schaferct/code/eval_list/{policy}"):
-            for trace_name in os.listdir(f"/data2/kj/Schaferct/code/eval_list/{policy}/{bw_range}"):
+    trace_file = "/data2/wuhw/Schaferct/ALLdatasets/emulated_dataset_policy"
+    for policy in os.listdir("/data2/wuhw/Schaferct/code/eval_list"):
+        for bw_range in os.listdir(f"/data2/wuhw/Schaferct/code/eval_list/{policy}"):
+            for trace_name in os.listdir(f"/data2/wuhw/Schaferct/code/eval_list/{policy}/{bw_range}"):
                 trace = trace_file + f"/{policy}/{trace_name.split('.')[0]}.json"
                 print(trace)
 
